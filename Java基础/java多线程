@@ -78,6 +78,8 @@ Java 提供了三种创建线程的方法：
 
 共享变量在多线程模型中的不可见性问题，**加锁太繁重**
 
+volatile修饰的变量有可见性，一旦某个线程修改了这样的变量，就**立刻更新到主存**
+
 ### 性质：
 
 - 可见性，修改立刻更新主存，**每次读取到的都是最新的**。
@@ -86,6 +88,60 @@ Java 提供了三种创建线程的方法：
 - 禁止进行**指令重排**。**指令重排：不保证语句顺序，但保证语句结果**
 
   告诉CPU和编译器先于volatile的必须先执行，后于volatile的必须后执行
+
+> #### 问题：指令重排序问题
+>
+> instance = new Singleton();的执行过程可能被重排序。
+>
+> 正常过程如下：
+>
+> 1. 分配内存空间
+> 2. 初始化Singleton实例
+> 3. instance 实例变量引用
+>
+> 但是被重排序以后可能会出现：
+>
+> 1. 分配内存空间
+> 2. instance 实例变量引用
+> 3. 初始化Singleton实例
+>
+> **如果先赋值了instance变量，那么b线程获取的就为null，`if (singleton == null)`为true**
+>
+> - **使用volatile就能避免重排序**
+
+```java
+/**
+ * 懒汉式 双检锁/双重校验锁（DCL，即 double-checked locking）
+ * 【推荐使用】
+ * > JDK1.5
+ *
+ * 线程安全性：是
+ * lazy初始化：是
+ */
+class LazySingletonDCL{
+
+    /**
+     * instance变量时使用了volatile关键字。
+     * 没有volatile修饰符，可能出现Java中的另一个线程看到个初始化了一半的_instance的情况，
+     * 但使用了volatile变量后，就能保证先行发生关系（happens-before relationship）。
+     * 对于volatile变量_instance，所有的写（write）都将先行发生于读（read）
+     */
+    private volatile static Singleton singleton = null;
+
+    public static Singleton getInstance() {
+
+        if (singleton == null) {
+            synchronized (Singleton.class){ // 防止其他线程也创建Singleton
+                if (singleton == null){
+                    return new Singleton();
+                }
+            }
+        }
+
+        return singleton;
+    }
+}
+```
 
 
 
@@ -423,10 +479,18 @@ public static void main(String[] args) {
 
 - 区别
 
+  - synchronized 是同步阻塞，使用的是悲观并发策略，lock 是同步非阻塞，采用的是乐观并发策略
+
+  - synchronized 在发生异常时，会**自动释放线程占有的锁**，因此不会导致死锁现象发生；
+
+    而 Lock 在发生异常时，如果没有主动通过 **unLock()去释放锁**，则很可能造成死锁现象，
+  
+    因此使用 Lock 时需要在 finally 块中释放锁。
+  
   - **基础**：Synchronized来说，它是java语言的关键字，是**原生语法层面**的互斥，需要jvm实现。
-
+  
     ReentrantLock它是JDK 1.5之后提供的**API层面**的互斥锁，需要lock()和unlock()方法配合try/finally语句块来完成
-
+  
     ```java
     class MyThread implements Runnable {
     	private Lock lock=new ReentrantLock();
@@ -455,14 +519,27 @@ public static void main(String[] args) {
     > ReentrantLock 是显式锁，通过 lock() 和 unlock() 方法控制线程的进入和释放，它支持公平锁和非公平锁，且可以响应中断。当持有锁的线程被中断时，它会在 unlock() 之前抛出 InterruptedException。
     >
     > 而 synchronized 是 Java 语言内置的锁，是一种隐式锁，直接通过对象引用来锁定。synchronized 在遇到中断时，如果被中断的线程正在等待获取锁，那么它将不会释放锁，而是抛出 InterruptedException。如果被中断的线程已经获取了锁，那么它将会忽略中断，继续执行，并在执行完毕后释放锁。
-
-  - synchronized 是同步阻塞，使用的是悲观并发策略，lock 是同步非阻塞，采用的是乐观并发策略
-
-  - synchronized 在发生异常时，会**自动释放线程占有的锁**，因此不会导致死锁现象发生；
-
-    而 Lock 在发生异常时，如果没有主动通过 **unLock()去释放锁**，则很可能造成死锁现象，
-
-    因此使用 Lock 时需要在 finally 块中释放锁。
+    >
+    > - 下面是一个使用 `ReentrantLock` 中断等待的简单示例：
+    >
+    >   ```
+    >   javaCopy codeimport java.util.concurrent.locks.Lock;
+    >   import java.util.concurrent.locks.ReentrantLock;
+    >       
+    >   public class InterruptibleLockExample {
+    >       private final Lock lock = new ReentrantLock();
+    >       
+    >       public void performTask() throws InterruptedException {
+    >           lock.lockInterruptibly(); // 线程可以被中断
+    >           try {
+    >               // 执行需要同步的代码
+    >           } finally {
+    >               lock.unlock();
+    >           }
+    >       }
+    >   }
+    >   ```
+  
 
 ### 为什么使用ReentrantLock？
 
@@ -579,9 +656,13 @@ JVM的抢占式：优先级高得到越多的执行时间片，不单独占用
 
 > - 悲观锁：**synchronized**是悲观锁，这种线程一旦得到锁，其他需要锁的线程就挂起的情况就是悲观锁。**对资源操作会有一个独占的锁**
 >
+>   ![](http://img.whaifree.top//89d34d8196e74fafb3843292b0aa481e.png)
+>
 > - 乐观锁（Compare And Swap）：**CAS操作**的就是乐观锁，每次不加锁而是假设没有冲突而去完成某项操作，如果**因为冲突失败就重试（回滚），直到成功为止。**
 >
 >   ==**比较-替换CAS**这两个动作作为一个原子操作尝试去修改内存中的变量==
+>
+>   ![在这里插入图片描述](http://img.whaifree.top//89d34d8196e74fafb3843292b0aa481e.png)
 
 ## CAS是什么？有什么性质？有什么用？
 

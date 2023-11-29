@@ -401,6 +401,14 @@ HashSet(int initialCapacity, float loadFactor, boolean dummy) {
 
 - **最大并发数：**Segment数组默认16，1.8最大是Node数组大小。
 
+> 从 JDK1.7 版本的 ReentrantLock+Segment+HashEntry，到 JDK1.8 版本中 synchronized+CAS+HashEntry + 红黑树。
+>
+> 1. 数据结构：取消了 Segment 分段锁的数据结构，取而代之的是数组 + 链表 + 红黑树的结构。
+> 2. 保证线程安全机制：JDK1.7 采用 segment 的分段锁机制实现线程安全，其中 segment 继承自 ReentrantLock。JDK1.8 采用 CAS+Synchronized 保证线程安全。
+> 3. 锁的粒度：原来是对需要进行数据操作的 Segment 加锁，现调整为对每个数组元素加锁（Node）。
+> 4. 链表转化为红黑树：定位结点的 hash 算法简化会带来弊端，Hash 冲突加剧，因此在链表节点数量大于 8 时，会将链表转化为红黑树进行存储。
+> 5. 查询时间复杂度：从原来的遍历链表 O (n)，变成遍历红黑树 O (logN)。
+
 ### ConcurrentHashMap 为什么 key 和 value 不能为 null？
 
 - **key**：避免二义性，是没有这个key还是key为null
