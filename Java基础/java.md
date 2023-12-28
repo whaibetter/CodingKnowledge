@@ -306,6 +306,37 @@ class C implements A, B {
 
   在类中增加 writeObject 和 readObject 方法可以实现自定义序列化策略。
 
+```java
+import java.io.*;
+
+// 实现 Serializable 接口
+public class MyClass implements Serializable {
+    private static final long serialVersionUID = 1L; // 序列化版本号，= 1L;： 这是对版本号的初始化。通常建议初始版本号设为1，表示初始版本
+
+    private int id;
+    private String name;
+
+    // 构造函数等其他代码
+
+    // 序列化方法
+    public void serialize(String filename) throws IOException {
+        try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(filename))) {
+            outputStream.writeObject(this);
+        }
+    }
+
+    // 反序列化方法
+    public static MyClass deserialize(String filename) throws IOException, ClassNotFoundException {
+        try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(filename))) {
+            return (MyClass) inputStream.readObject();
+        }
+    }
+}
+
+```
+
+
+
 ## **Transient** 关键字有什么用
 
 - **字段不进行序列化**

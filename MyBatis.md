@@ -1,5 +1,7 @@
 # Mybatis
 
+[MyBatis常见面试题总结 | JavaGuide(Java面试 + 学习指南)](https://javaguide.cn/system-design/framework/mybatis/mybatis-interview.html#dao-接口的工作原理是什么-dao-接口里的方法-参数不同时-方法能重载吗)
+
 [java - Mybatis系列全解（八）：Mybatis的9大动态SQL标签你知道几个？提前致女神！ - 框架系列全解 - SegmentFault 思否](https://segmentfault.com/a/1190000039335704)
 
 ### \#{}和${}在mybatis的区别
@@ -45,7 +47,10 @@
 - `interface Mapper`'
 - `<mapper namespace="com.whai.blog.mapper.BlogBrowseMapper">`
 
+重载通过使用动态sql实现
+
 ```java
+List<Student> getAllStu();
 List<Student> getAllStu(@Param("id") Integer id);
 ```
 
@@ -60,7 +65,7 @@ List<Student> getAllStu(@Param("id") Integer id);
 </select>
 ```
 
-- Mybatis的XML里面的ID不允许重复
+- Mybatis的XML里面的ID不允许重复，namespace+id为真实id
 
 
 

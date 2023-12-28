@@ -89,6 +89,27 @@ volatile修饰的变量有可见性，一旦某个线程修改了这样的变量
 
   告诉CPU和编译器先于volatile的必须先执行，后于volatile的必须后执行
 
+> 变量声明`volatile`关键字，
+>
+> 1. 所有线程对该变量的**写入都会被立即同步到主内存中**
+> 2. 读取时，就**从MainMemory获取**
+>
+> ```java
+> public class MyClass {
+>     private int years;
+>     private int months
+>     private volatile int days;
+> 
+>     public void update(int years, int months, int days){
+>         this.years  = years;
+>         this.months = months;
+>         this.days   = days;
+>     }
+> }
+> ```
+>
+> - 当days修改的时候，会将years，months也写入
+>
 > #### 问题：指令重排序问题
 >
 > instance = new Singleton();的执行过程可能被重排序。
@@ -525,10 +546,10 @@ public static void main(String[] args) {
     >   ```
     >   javaCopy codeimport java.util.concurrent.locks.Lock;
     >   import java.util.concurrent.locks.ReentrantLock;
-    >       
+    >         
     >   public class InterruptibleLockExample {
     >       private final Lock lock = new ReentrantLock();
-    >       
+    >         
     >       public void performTask() throws InterruptedException {
     >           lock.lockInterruptibly(); // 线程可以被中断
     >           try {
@@ -678,6 +699,29 @@ JVM的抢占式：优先级高得到越多的执行时间片，不单独占用
 特点：在执行过程中**不需要使用传统的互斥锁**，因此它可以在并发环境下实现**高效的线程同步**。
 
 作用：保证原子操作。
+
+```java
+class AtomicInteger{
+    ...
+}
+class Unsafe{
+    
+	public final int getAndAddInt(Object var1, long var2, int var4) {
+        int var5;
+        do {
+            var5 = this.getIntVolatile(var1, var2);
+            // while cas
+        } while(!this.compareAndSwapInt(var1, var2, var5, var5 + var4));
+        return var5;
+	}
+}
+
+// native 就是根据不同平台调用底层d
+public final native boolean compareAndSwapInt(Object var1, long var2, int var4, int var5);
+
+```
+
+
 
 ## CAS自旋是什么？优缺点？
 
