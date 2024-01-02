@@ -1,0 +1,47 @@
+## Redis
+
+### 什么是 Redis？
+
+- [Redisopen in new window](https://redis.io/) （**RE**mote **DI**ctionary **S**erver）是一个基于 C 语言开发的开源 NoSQL 数据库（BSD 许可）
+- Redis 的数据是保存在内存中的（内存数据库，支持持久化），因此读写速度非常快，被广泛应用于分布式缓存方向
+
+[在线 Redis 环境](https://try.redis.io/)
+
+###  Redis 为什么这么快？
+
+1. 基于**内存**
+2. 基于 **Reactor 模式**设计开发了一套高效的事件处理模型，主要是单线程事件循环和 IO 多路复用
+3. 内置了多种优化过后的**数据类型/结构实现**
+
+
+
+### 说一下 Redis 和 Memcached 的区别和共同点
+
+同：
+
+1. 性能
+2. 内存
+
+异：
+
+1. Memcached只支持KV
+2. Redis数据**持久化**
+3. Redis**使用完内存，可以将旧数据放在磁盘**
+4. Redis原生**集群**
+5. **Memcached 是多线程，非阻塞 IO 复用的网络模型；Redis 使用单线程的多路 IO 复用模型。** （Redis 6.0 针对网络数据的读写引入了多线程）
+6. **Redis 支持发布订阅模型、Lua 脚本、事务等功能**
+
+###  Redis 除了做缓存，还能做什么？
+
+**分布式锁**：通过 Redis 来做分布式锁是一种比较常见的方式。通常情况下，我们都是基于 Redisson 来实现分布式锁。关于 Redis 实现分布式锁的详细介绍，可以看我写的这篇文章：[分布式锁详解open in new window](https://javaguide.cn/distributed-system/distributed-lock.html) 。
+
+**限流**：一般是通过 Redis + Lua 脚本的方式来实现限流。相关阅读：[《我司用了 6 年的 Redis 分布式限流器，可以说是非常厉害了！》open in new window](https://mp.weixin.qq.com/s/kyFAWH3mVNJvurQDt4vchA)。
+
+**消息队列**：Redis 自带的 List 数据结构可以作为一个简单的队列使用。Redis 5.0 中增加的 Stream 类型的数据结构更加适合用来做消息队列。它比较类似于 Kafka，有主题和消费组的概念，支持消息持久化以及 ACK 机制。
+
+**延时队列**：Redisson 内置了延时队列（基于 Sorted Set 实现的）。
+
+**分布式 Session** ：利用 String 或者 Hash 数据类型保存 Session 数据，所有的服务器都可以访问。
+
+**复杂业务场景**：通过 Redis 以及 Redis 扩展（比如 Redisson）提供的数据结构，我们可以很方便地完成很多复杂的业务场景比如通过 Bitmap 统计活跃用户、通过 Sorted Set 维护排行榜。
+

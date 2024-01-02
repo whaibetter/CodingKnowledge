@@ -369,6 +369,8 @@ Spring AOP 就是基于动态代理的
 ### Spring AOP 和 AspectJ AOP 有什么区别？
 
 - **Spring AOP 属于==运行时==增强，而 AspectJ 是==编译时==增强。** 
+  - **应用场景不同**：Spring AOP的实现都是在运行时进行织入的，而且只能针对方法进行AOP，无法针对构造函数、字段进行AOP。而AspectJ可以在编译成class时就织入，还提供了后编译器织入和类加载期织入。
+
 - Spring AOP 基于代理(Proxying)，而 AspectJ 基于字节码操作(Bytecode Manipulation)。
 
 当切面太多的话，最好选择 AspectJ ，它比 Spring AOP 快很多。
@@ -434,16 +436,14 @@ Spring AOP 就是基于动态代理的
 **根据请求，找到处理器的过程**
 
 - **`DispatcherServlet`**：**核心的中央处理器**，负责接收请求、分发，并给予客户端响应。
-
 - **`HandlerMapping`**：**处理器映射器**，根据 URL 去匹配查找能处理的 `Handler` ，并会将请求涉及到的拦截器和 `Handler` 一起封装。
-
+  - BeanNameUrlHandlerMapping(根据URL /test映射到testController)、DefaultAnnotationHandlerMapping（根据注解@xxxMapping映射）和RequestMappingHandlerMapping（增加注解@xxxMapping类型）
 - **`HandlerAdapter`**：**处理器适配器**，根据 `HandlerMapping` 找到的 `Handler` ，适配执行对应的 `Handler`；
-
 - **`Handler`**：**请求处理器**，处理实际请求的处理器。
-
 - **`ViewResolver`**：**视图解析器**，根据 `Handler` 返回的逻辑视图 / 视图，解析并渲染真正的视图，并传递给 `DispatcherServlet` 响应客户端
 
-  
+
+![img](http://img.whaifree.top//de6d2b213f112297298f3e223bf08f28.png)
 
 ### SpringMVC 工作原理了解吗?
 
