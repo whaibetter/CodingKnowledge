@@ -1,7 +1,8 @@
-![java集合树状结构及源码_WolfArya的博客-CSDN博客](http://img.whaifree.top//OIP-C.8Njndz_T_ouyYaCIQ9VMngHaFk)
+![java集合树状结构及源码_WolfArya的博客-CSDN博客](http://42.192.130.83:9000/picgo/imgs/OIP-C.8Njndz_T_ouyYaCIQ9VMngHaFk)
 
-![Java 集合框架概览](http://img.whaifree.top//java-collection-hierarchy.png)
+![Java 集合框架概览](http://42.192.130.83:9000/picgo/imgs/java-collection-hierarchy.png)
 
+![Java 集合框架概览](http://42.192.130.83:9000/picgo/imgs/java-collection-hierarchy.png)
 ## 集合核心接口
 
 - List：ArrayList、LinkedList
@@ -233,7 +234,7 @@ public class Stack<E> extends Vector<E>
   
   ```
 
-  ![给面试官讲解hashmap底层原理后，他表示很看好我 | w3c笔记](http://img.whaifree.top//1597914836534882.png)
+  ![给面试官讲解hashmap底层原理后，他表示很看好我 | w3c笔记](http://42.192.130.83:9000/picgo/imgs/1597914836534882.png)
 
 ## TreeSet
 
@@ -280,7 +281,7 @@ HashSet(int initialCapacity, float loadFactor, boolean dummy) {
 
 ![（68）TreeSet练习：两种排序方式：自然排序（实现comparable接口）、比较器_FixedStarHaHa的博客-CSDN博客](https://tse3-mm.cn.bing.net/th/id/OIP-C.riLlcRbjuU5LG3Q82XRKewHaEK?pid=ImgDet&rs=1)
 
-![面试官：如何用LinkedHashMap实现LRU_zy353003874的博客-CSDN博客](http://img.whaifree.top//aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMjQ2MzUxLTU1MjZmNmZhNzI5ZTk4N2M)
+![面试官：如何用LinkedHashMap实现LRU_zy353003874的博客-CSDN博客](http://42.192.130.83:9000/picgo/imgs/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMjQ2MzUxLTU1MjZmNmZhNzI5ZTk4N2M)
 
 
 
@@ -288,11 +289,11 @@ HashSet(int initialCapacity, float loadFactor, boolean dummy) {
 
 ### HashMap结构
 
-![给面试官讲解hashmap底层原理后，他表示很看好我 | w3c笔记](http://img.whaifree.top//1597914836534882.png)
+![给面试官讲解hashmap底层原理后，他表示很看好我 | w3c笔记](http://42.192.130.83:9000/picgo/imgs/1597914836534882.png)
 
 - Java7 没有使用红黑树
 
-![Java7](http://img.whaifree.top//r7ZADaG3Ke.png)
+![Java7](http://42.192.130.83:9000/picgo/imgs/r7ZADaG3Ke.png)
 
 > 关键参数：
 >
@@ -309,7 +310,7 @@ HashSet(int initialCapacity, float loadFactor, boolean dummy) {
 
 > 数组+链表+红黑树
 >
-> ![OwRV5xB6l5](http://img.whaifree.top//OwRV5xB6l5.png)
+> ![OwRV5xB6l5](http://42.192.130.83:9000/picgo/imgs/OwRV5xB6l5.png)
 >
 > - 当前**数组的长度小于 64，那么会选择先进行数组扩容**，而不是转换为红黑树
 > - 当**链表长度大于阈值（默认为 8）**时，将链表转化为红黑树，以减少搜索时间。
@@ -377,9 +378,9 @@ HashSet(int initialCapacity, float loadFactor, boolean dummy) {
 - 使用了`HashEntry`存储键值对
 
 
-![Java7 ConcurrentHashMap 存储结构](http://img.whaifree.top//java7_concurrenthashmap.png)
+![Java7 ConcurrentHashMap 存储结构](http://42.192.130.83:9000/picgo/imgs/java7_concurrenthashmap.png)
 
-![HashMap与ConcurrentHashMap 详解_majiawenzzz的博客-CSDN博客](http://img.whaifree.top//R-C.a563133d1a574eb72848fe278e5d2af0)
+![HashMap与ConcurrentHashMap 详解_majiawenzzz的博客-CSDN博客](http://42.192.130.83:9000/picgo/imgs/R-C.a563133d1a574eb72848fe278e5d2af0)
 
 ### 1.8之后的ConcurrentHashMap结构
 
@@ -389,7 +390,7 @@ HashSet(int initialCapacity, float loadFactor, boolean dummy) {
   - 使用 synchronized 锁住链表头结点，因为单向链表的操作都是从头结点开始，所以也就锁住了整条链表。
 
 
-![Java8 ConcurrentHashMap 存储结构](http://img.whaifree.top//java8_concurrenthashmap.png)
+![Java8 ConcurrentHashMap 存储结构](http://42.192.130.83:9000/picgo/imgs/java8_concurrenthashmap.png)
 
 ### JDK 1.7 和 JDK 1.8 的 ConcurrentHashMap 实现有什么不同？
 
@@ -440,7 +441,7 @@ HashSet(int initialCapacity, float loadFactor, boolean dummy) {
 
 ### LinkedHashMap有什么特点？
 
-![面试官：如何用LinkedHashMap实现LRU_zy353003874的博客-CSDN博客](http://img.whaifree.top//aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMjQ2MzUxLTU1MjZmNmZhNzI5ZTk4N2M)
+![面试官：如何用LinkedHashMap实现LRU_zy353003874的博客-CSDN博客](http://42.192.130.83:9000/picgo/imgs/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMjQ2MzUxLTU1MjZmNmZhNzI5ZTk4N2M)
 
 - 保存了记录的插入顺序
 - 使用父类HashMap的方法操作数据
@@ -524,7 +525,7 @@ public class Hashtable<K,V>
 
   > 数组为[0,1,3,4,2,8,7,6,5,9]
   >
-  > ![优先队列（PriorityQueue）常用方法及简单案例_little_fat_sheep的博客-CSDN博客_priorityqueue的方法](http://img.whaifree.top//20190831154010523.png)
+  > ![优先队列（PriorityQueue）常用方法及简单案例_little_fat_sheep的博客-CSDN博客_priorityqueue的方法](http://42.192.130.83:9000/picgo/imgs/20190831154010523.png)
 
 - 出队顺序是与**优先级**相关的
 

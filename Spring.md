@@ -13,7 +13,7 @@
 - AOP
 - Aspects
 
-![Spring5.x主要模块](http://img.whaifree.top//20200831175708.png)
+![Spring5.x主要模块](http://42.192.130.83:9000/picgo/imgs/20200831175708.png)
 
 #### core container
 
@@ -166,7 +166,7 @@ private SmsService smsService;
 
 ### ----Bean 的生命周期?
 
-![Spring Bean 生命周期](http://img.whaifree.top//b5d264565657a5395c2781081a7483e1.jpg)
+![Spring Bean 生命周期](http://42.192.130.83:9000/picgo/imgs/b5d264565657a5395c2781081a7483e1.jpg)
 
 > [Spring bean生命周期的源码分析（超级详细）_springbean生命周期 luban-CSDN博客](https://blog.csdn.net/qq_40634846/article/details/106604539)
 >
@@ -176,7 +176,7 @@ private SmsService smsService;
 > 4. **初始化**（Initialization）执行各种通知、前置后置方法
 > 5. **销毁**（Destruction）
 >
-> ![在这里插入图片描述](http://img.whaifree.top//20210707225212729.png)
+> ![在这里插入图片描述](http://42.192.130.83:9000/picgo/imgs/20210707225212729.png)
 >
 > 【史上最完整的Spring Bean的生命周期】https://www.bilibili.com/video/BV1584y1r7n6?vd_source=21aa5b1c385af63d5599b344a74f3ebe
 >
@@ -443,7 +443,7 @@ Spring AOP 就是基于动态代理的
 - **`ViewResolver`**：**视图解析器**，根据 `Handler` 返回的逻辑视图 / 视图，解析并渲染真正的视图，并传递给 `DispatcherServlet` 响应客户端
 
 
-![img](http://img.whaifree.top//de6d2b213f112297298f3e223bf08f28.png)
+![img](http://42.192.130.83:9000/picgo/imgs/de6d2b213f112297298f3e223bf08f28.png)
 
 ### SpringMVC 工作原理了解吗?
 
@@ -453,7 +453,7 @@ Spring AOP 就是基于动态代理的
 - 响应ModelAndView给DS
 - 视图解析器解析MaV
 
-![img](http://img.whaifree.top//de6d2b213f112297298f3e223bf08f28.png)
+![img](http://42.192.130.83:9000/picgo/imgs/de6d2b213f112297298f3e223bf08f28.png)
 
 ### 统一异常处理怎么做？
 

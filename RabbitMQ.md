@@ -22,7 +22,7 @@
 
 - Connection
 
-![wps_TqCtLmdiih](http://img.whaifree.top//wps_TqCtLmdiih.png)
+![wps_TqCtLmdiih](http://42.192.130.83:9000/picgo/imgs/wps_TqCtLmdiih.png)
 
 ### 2. Exchange 的类型
 
@@ -53,7 +53,7 @@
 
 1. ==使用 RabbitMQ 的死信交换机（Exchange）和消息的存活时间 TTL（Time To Live）。==
 
-![msedge_z5vvSuSS4i](http://img.whaifree.top//msedge_z5vvSuSS4i.png)
+![msedge_z5vvSuSS4i](http://42.192.130.83:9000/picgo/imgs/msedge_z5vvSuSS4i.png)
 
 设置队列TTL，让消息在这个队列停留，等到超时给到死信队列，消费者只监听死信队列。
 
@@ -77,7 +77,7 @@ AMQP，全称Advanced Message Queuing Protocol（高级消息队列协议），*
 
 最后再把消息投递给订阅了这个队列的消费者，从而完成消息的异步通讯。
 
-![i3OWPSd0gG](http://img.whaifree.top//i3OWPSd0gG.png)
+![i3OWPSd0gG](http://42.192.130.83:9000/picgo/imgs/i3OWPSd0gG.png)
 
 ##  RabbitMQ 有哪些工作模式？
 
@@ -93,7 +93,7 @@ AMQP，全称Advanced Message Queuing Protocol（高级消息队列协议），*
 
 - RPC (RPC协议的主要目的是做到不同服务间调用方法像同一服务间调用本地方法一样)
 
-  ![Summary illustration, which is described in the following bullet points.](http://img.whaifree.top//python-six.png)
+  ![Summary illustration, which is described in the following bullet points.](http://42.192.130.83:9000/picgo/imgs/python-six.png)
 
 ## RabbitMQ 消息怎么传输？
 

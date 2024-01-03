@@ -1,6 +1,6 @@
 ## 线程的生命周期
 
-![img](http://img.whaifree.top//java-thread.jpg)
+![img](http://42.192.130.83:9000/picgo/imgs/java-thread.jpg)
 
 - 新建 new Tread
   - start
@@ -25,7 +25,7 @@ Java 提供了三种创建线程的方法：
   ```java
   FutureTask<Integer> integerFutureTask = new FutureTask<>(new CallableDemo());
           new Thread(integerFutureTask).start();
-  
+
   class CallableDemo implements Callable<Integer> {
       @Override
       public Integer call()
@@ -99,7 +99,7 @@ volatile修饰的变量有可见性，一旦某个线程修改了这样的变量
 >     private int years;
 >     private int months
 >     private volatile int days;
-> 
+>
 >     public void update(int years, int months, int days){
 >         this.years  = years;
 >         this.months = months;
@@ -193,7 +193,7 @@ class LazySingletonDCL{
 - 对任务操作，对Callable这个异步**运算的任务的结果进行等待获取、判断是否已经完成、取消任务等操作**
 
 ```java
-public class FutureTask<V> implements RunnableFuture<V> 
+public class FutureTask<V> implements RunnableFuture<V>
 ```
 
 ```java
@@ -286,7 +286,7 @@ try {
 > ```java
 > public class Demo {
 >     private static Object lock = new Object();
-> 
+>
 >     public static void main(String[] args) {
 >         Thread thread1 = new Thread(new Runnable() {
 >             @Override
@@ -302,7 +302,7 @@ try {
 >                 }
 >             }
 >         });
-> 
+>
 >         Thread thread2 = new Thread(new Runnable() {
 >             @Override
 >             public void run() {
@@ -318,7 +318,7 @@ try {
 >                 }
 >             }
 >         });
-> 
+>
 >         thread1.start();
 >         thread2.start();
 >     }
@@ -414,14 +414,14 @@ ThreadLocal的作用是提供**线程内的==局部变量==**，这种变量在�
                   '}';
       }
   }
-  
-  
+
+
   class MyTask implements Runnable {
-  
+
       private static final ThreadLocal threadSession = new ThreadLocal();
-  
+
       static int i = 0;
-  
+
       public static MySession getSession() {
           MySession o = (MySession)threadSession.get();
           if (o == null) {
@@ -430,7 +430,7 @@ ThreadLocal的作用是提供**线程内的==局部变量==**，这种变量在�
           }
           return o;
       }
-  
+
       public static void main(String[] args) {
           new Thread(new Runnable() {
               @Override
@@ -454,7 +454,7 @@ ThreadLocal的作用是提供**线程内的==局部变量==**，这种变量在�
   // threadSession.get  MySession{name='0'}
   // 1 线程有自己的变量区域
   // threadSession.get  MySession{name='1'}
-  
+
   ```
 
 ##  wait()方法和notify()/notifyAll()方法在放弃对象监视器时有什么区别
@@ -466,34 +466,34 @@ ThreadLocal的作用是提供**线程内的==局部变量==**，这种变量在�
 > - `notify()` 和 `notifyAll()` 不会释放对象的监视器锁。它们只是唤醒在对象监视器上等待的线程。被唤醒的线程需要重新获取对象的监视器锁才能继续执行。
 
 ```java
-public class Demo {  
-    private static final Object lock = new Object();  
-    private static int count = 0;  
-  
-    public static void main(String[] args) {  
-        Thread t1 = new Thread(() -> {  
-            synchronized (lock) {  
-                while (count < 10) {  
-                    System.out.println("Thread 1: " + count++);  
-                    lock.notify();  
-                }  
-                lock.wait();  
-            }  
-        });  
-  
-        Thread t2 = new Thread(() -> {  
-            synchronized (lock) {  
-                while (count < 20) {  
-                    System.out.println("Thread 2: " + count++);  
-                    lock.notify();  
-                }  
-                lock.wait();  
-            }  
-        });  
-  
-        t1.start();  
-        t2.start();  
-    }  
+public class Demo {
+    private static final Object lock = new Object();
+    private static int count = 0;
+
+    public static void main(String[] args) {
+        Thread t1 = new Thread(() -> {
+            synchronized (lock) {
+                while (count < 10) {
+                    System.out.println("Thread 1: " + count++);
+                    lock.notify();
+                }
+                lock.wait();
+            }
+        });
+
+        Thread t2 = new Thread(() -> {
+            synchronized (lock) {
+                while (count < 20) {
+                    System.out.println("Thread 2: " + count++);
+                    lock.notify();
+                }
+                lock.wait();
+            }
+        });
+
+        t1.start();
+        t2.start();
+    }
 }
 ```
 
@@ -558,7 +558,7 @@ public static void main(String[] args) {
   >
   >   ```java
   >   //除非当前线程 中断，否则获取锁。
-  >   //lockInterruptibly是Object类中的一个方法，用于线程安全地获取一个锁。 当前线程尝试获取锁时，如果锁已被其他线程获取，当前线程将进入等待状态，直到获取到锁或者被其他线程中断。如果当前线程被中断，它将抛出InterruptedException异常。 
+  >   //lockInterruptibly是Object类中的一个方法，用于线程安全地获取一个锁。 当前线程尝试获取锁时，如果锁已被其他线程获取，当前线程将进入等待状态，直到获取到锁或者被其他线程中断。如果当前线程被中断，它将抛出InterruptedException异常。
   >   public void lockInterruptibly() throws InterruptedException {
   >           sync.acquireInterruptibly(1);
   >   }
@@ -566,20 +566,20 @@ public static void main(String[] args) {
   >
   > - **底层实现不同**
   >
-  >   synchronized 是 JVM;ReentrantLock 是通过 AQS（AbstractQueuedSynchronizer）程序级别的 API 
-  
+  >   synchronized 是 JVM;ReentrantLock 是通过 AQS（AbstractQueuedSynchronizer）程序级别的 API
+
   - synchronized 是同步阻塞，使用的是悲观并发策略，lock 是同步非阻塞，采用的是乐观并发策略
-  
+
   - synchronized 在发生异常时，会**自动释放线程占有的锁**，因此不会导致死锁现象发生；
-  
+
     而 Lock 在发生异常时，如果没有主动通过 **unLock()去释放锁**，则很可能造成死锁现象，
-  
+
     因此使用 Lock 时需要在 finally 块中释放锁。
-  
+
   - **基础**：Synchronized来说，它是java语言的关键字，是**原生语法层面**的互斥，需要jvm实现。
-  
+
     ReentrantLock它是JDK 1.5之后提供的**API层面**的互斥锁，需要lock()和unlock()方法配合try/finally语句块来完成
-  
+
     ```java
     class MyThread implements Runnable {
     	private Lock lock=new ReentrantLock();
@@ -594,17 +594,17 @@ public static void main(String[] args) {
     	}
     }
     ```
-  
+
   - ReentrantLock可以实现**公平锁**
-  
+
     > **公平锁**: **线程直接进入队列中排队，第一个线程获取锁。（按顺序来）**
     >
     > **非公平锁:  加锁的时候直接要锁，要不到再排队，就是有可能抢占锁**
-  
+
   - **性能**：ReentrantLock，减少了线程挂起和唤醒次数
-  
+
   - **等待可中断性**：ReentrantLock可以响应中断，而synchronized是不支持的。
-  
+
     > ReentrantLock 是显式锁，通过 lock() 和 unlock() 方法控制线程的进入和释放，它支持公平锁和非公平锁，且可以响应中断。当持有锁的线程被中断时，它会在 unlock() 之前抛出 InterruptedException。
     >
     > 而 synchronized 是 Java 语言内置的锁，是一种隐式锁，直接通过对象引用来锁定。synchronized 在遇到中断时，如果被中断的线程正在等待获取锁，那么它将不会释放锁，而是抛出 InterruptedException。如果被中断的线程已经获取了锁，那么它将会忽略中断，继续执行，并在执行完毕后释放锁。
@@ -614,10 +614,10 @@ public static void main(String[] args) {
     >   ```
     >   javaCopy codeimport java.util.concurrent.locks.Lock;
     >   import java.util.concurrent.locks.ReentrantLock;
-    >               
+    >
     >   public class InterruptibleLockExample {
     >       private final Lock lock = new ReentrantLock();
-    >               
+    >
     >       public void performTask() throws InterruptedException {
     >           lock.lockInterruptibly(); // 线程可以被中断
     >           try {
@@ -729,7 +729,7 @@ public static void main(String[] args) {
 
 ## Java中用到的线程调度算法是
 
-线程调度算法有： 
+线程调度算法有：
 
 - **抢占式**（JVM使用的），OS根据线程优先级、饥饿情况计算优先级分配，**都由系统控制**
 - 协同式调度，**接力赛**，执行完通知另一个线程。
@@ -744,13 +744,13 @@ JVM的抢占式：优先级高得到越多的执行时间片，不单独占用
 
 > - 悲观锁：**synchronized**是悲观锁，这种线程一旦得到锁，其他需要锁的线程就挂起的情况就是悲观锁。**对资源操作会有一个独占的锁**
 >
->   ![](http://img.whaifree.top//89d34d8196e74fafb3843292b0aa481e.png)
+>   ![](http://42.192.130.83:9000/picgo/imgs/89d34d8196e74fafb3843292b0aa481e.png)
 >
 > - 乐观锁（Compare And Swap）：**CAS操作**的就是乐观锁，每次不加锁而是假设没有冲突而去完成某项操作，如果**因为冲突失败就重试（回滚），直到成功为止。**
 >
 >   ==**比较-替换CAS**这两个动作作为一个原子操作尝试去修改内存中的变量==
 >
->   ![在这里插入图片描述](http://img.whaifree.top//89d34d8196e74fafb3843292b0aa481e.png)
+>   ![在这里插入图片描述](http://42.192.130.83:9000/picgo/imgs/89d34d8196e74fafb3843292b0aa481e.png)
 
 ## CAS是什么？有什么性质？有什么用？
 
@@ -772,7 +772,7 @@ class AtomicInteger{
     ...
 }
 class Unsafe{
-    
+
 	public final int getAndAddInt(Object var1, long var2, int var4) {
         int var5;
         do {
@@ -839,7 +839,7 @@ new Thread(() -> {
 >                 @Override
 >                 public void run() {
 >                     System.out.println("1" + Thread.currentThread().getName());
-> 
+>
 >                     new Thread(
 >                             new Runnable() {
 >                                 @Override
@@ -848,12 +848,12 @@ new Thread(() -> {
 >                                 }
 >                             }
 >                             , "thread-22").start();
-> 
-> 
+>
+>
 >                 }
 >             }
 >             , "thread-11").start();
-> 
+>
 > }
 > ```
 >
