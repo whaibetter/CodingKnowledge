@@ -33,71 +33,189 @@
 
 ###  Redis 除了做缓存，还能做什么？
 
-**分布式锁**：通过 Redis 来做分布式锁是一种比较常见的方式。通常情况下，我们都是基于 Redisson 来实现分布式锁。关于 Redis 实现分布式锁的详细介绍，可以看我写的这篇文章：[分布式锁详解open in new window](https://javaguide.cn/distributed-system/distributed-lock.html) 。
+- **分布式锁**：通过 Redis 来做分布式锁是一种比较常见的方式。通常情况下，我们都是基于 Redisson 来实现分布式锁。关于 Redis 实现分布式锁的详细介绍，可以看我写的这篇文章：[分布式锁详解open in new window](https://javaguide.cn/distributed-system/distributed-lock.html) 。
 
-**限流**：一般是通过 Redis + Lua 脚本的方式来实现限流。相关阅读：[《我司用了 6 年的 Redis 分布式限流器，可以说是非常厉害了！》open in new window](https://mp.weixin.qq.com/s/kyFAWH3mVNJvurQDt4vchA)。
+- **限流**：一般是通过 Redis + Lua 脚本的方式来实现限流。相关阅读：[《我司用了 6 年的 Redis 分布式限流器，可以说是非常厉害了！》open in new window](https://mp.weixin.qq.com/s/kyFAWH3mVNJvurQDt4vchA)。
 
-**消息队列**：Redis 自带的 List 数据结构可以作为一个简单的队列使用。Redis 5.0 中增加的 Stream 类型的数据结构更加适合用来做消息队列。它比较类似于 Kafka，有主题和消费组的概念，支持消息持久化以及 ACK 机制。
+- **消息队列**：Redis 自带的 List 数据结构可以作为一个简单的队列使用。Redis 5.0 中增加的 Stream 类型的数据结构更加适合用来做消息队列。它比较类似于 Kafka，有主题和消费组的概念，支持消息持久化以及 ACK 机制。
 
-**延时队列**：Redisson 内置了延时队列（基于 Sorted Set 实现的）。
+- **延时队列**：Redisson 内置了延时队列（基于 Sorted Set 实现的）。
 
-**分布式 Session** ：利用 String 或者 Hash 数据类型保存 Session 数据，所有的服务器都可以访问。
+- **分布式 Session** ：利用 String 或者 Hash 数据类型保存 Session 数据，所有的服务器都可以访问。
 
-**复杂业务场景**：通过 Redis 以及 Redis 扩展（比如 Redisson）提供的数据结构，我们可以很方便地完成很多复杂的业务场景比如通过 Bitmap 统计活跃用户、通过 Sorted Set 维护排行榜。
+- **复杂业务场景**：通过 Redis 以及 Redis 扩展（比如 Redisson）提供的数据结构，我们可以很方便地完成很多复杂的业务场景比如通过 Bitmap 统计活跃用户、通过 Sorted Set 维护排行榜。
 
- 
+###  Redis 数有哪些据类型？对应的应用场景？
 
+5种基本类型
 
+| 类型    | 特性                                                 | 应用场景                                                     |
+| ------- | ---------------------------------------------------- | ------------------------------------------------------------ |
+| string  | 一种二进制安全的数据类型，存储的是序列化后的对象数据 | 计数、缓存、分布式锁`setnx k v`                              |
+| set     |                                                      | 不能重复的场景（文章点赞、网站 UV `Unique Visitor` 统计）<br />`SInter`需要交集的场景（共同好友、粉丝）<br />`SDiff`需要差集的场景（可能的好友、推荐博主、音乐推荐）<br /><br />`SPop`随机场景（随机点名、随机抽奖） |
+| zset    | 有序，`zadd` `zrange`                                | 有序且不重复：排行榜                                         |
+| hashmap | 可以存储对象单个字段，做到对象部分字段的修改。       | 存储需要经常变化的对象。                                     |
+| list    |                                                      |                                                              |
 
+3 种特殊类型
 
+| 类型        | 特性                                                         | 应用场景                       |
+| ----------- | ------------------------------------------------------------ | ------------------------------ |
+| bitmap      | key [0101010101]                                             | 签到、用户状态                 |
+| geospatial  |                                                              |                                |
+| hyperloglog | **无论集合包含的元素有多少个，HyperLogLog 进行计算所需的内存总是固定的，并且是非常少的**。每个 `HyperLogLog` 最多只需要花费 12KB 内存，就可以计算 2 的 64 次方个元素的基数。 | 基数统计（单个页面的访问数量） |
 
+###  String 还是 Hash 存储对象数据更好呢？
 
+- Map存储的是整个对象，可以做单独的修改。**Map节省流量**。
+- **String更加节省内存**，String 消耗的内存约是 Hash 的一半。
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+在绝大部分情况，我们建议使用 String 来存储对象数据即可！
 
 
 
+### String 的底层实现是什么？
+
+Redis 是基于 C 语言编写的，但 Redis 的 String 类型的底层实现并不是 C 语言中的字符串（即以空字符 `\0` 结尾的字符数组），而是自己编写了 [SDSopen in new window](https://github.com/antirez/sds)（Simple Dynamic String，简单动态字符串） 来作为底层实现。
 
 
 
+### 购物车信息用 String 还是 Hash 存储更好呢?
+
+由于购物车中的商品**频繁修改和变动**，购物车信息建议使用 Hash 存储：
+
+- `userId-->Hash(商品id,商品数量)`
+
+> 添加、修改商品 `hset @userId @commodityId @number`
+>
+> 查询商品 `hget @userId`
+>
+> 清空商品  `del @userId`
+
+### 使用 Redis 实现一个排行榜怎么做？
+
+`zadd key [NX|XX] [GT|LT] [CH] [INCR] `
+
+```java
+127.0.0.1:6379> zadd rank 0 number1
+(integer) 1
+127.0.0.1:6379> zadd rank 1 number2
+(integer) 1
+127.0.0.1:6379> zadd rank 2 number3
+(integer) 1
+127.0.0.1:6379> zrange rank 0 1
+1) "number1"
+2) "number2"
+127.0.0.1:6379>
+```
+
+### Set的应用场景
+
+- 不能重复的场景（文章点赞、网站 UV `Unique Visitor` 统计）
+- `SInter`需要交集的场景（共同好友、粉丝）
+- `SDiff`需要差集的场景（可能的好友、推荐博主、音乐推荐）
+- `SPop`随机场景（随机点名、随机抽奖）
+
+### 设计set抽奖
+
+```
+127.0.0.1:6379> sadd lottery user1 user2 user3
+(integer) 3
+127.0.0.1:6379> spop lottery 2
+1) "user1"
+2) "user2"
+127.0.0.1:6379> del lottery
+(integer) 1
+```
+
+###  使用 Bitmap 统计活跃用户怎么做？
+
+1. key为什么
+2. 每一位代表什么
+
+```java
+// 设置2021年3月8日 id 为 22 的用户 活跃
+127.0.0.1:6379> SETBIT 20210308 22 1
+(integer) 0
+// 获取id为前22的用户哪些是活跃的，只有00000000001，即id=22的用户；获取这个key对应的value的前23个无符号整数
+// u无符号整数 i有符号整数
+127.0.0.1:6379> bitfield 20210308 get u23 0
+1) (integer) 1
+// 获取id为22的用户是否在当天活跃；第22位是否为1
+127.0.0.1:6379> getbit 20210308 22
+(integer) 1
+// 当天在线用户的数量；这个key下有多少个1
+127.0.0.1:6379> bitcount 20210308
+(integer) 2
+```
+
+### 使用 HyperLogLog 统计页面 UV 用户访客 怎么做？相比使用Set有什么优势？
+
+- 内存效率高：固定大小12kb，**超级高效**
+- 运行效率：只进行简单的位运算
+
+```java
+127.0.0.1:6379> pfadd blog_page_id:1 user1 user2 user3
+(integer) 1
+127.0.0.1:6379> pfcount blog_page_id:1
+(integer) 3
+// pfmerge 合并
+```
 
 
 
+##  Redis 持久化机制（重要）
+
+- RDB 持久化、AOF 持久化、RDB 和 AOF 的混合持久化
+
+[Redis持久化机制详解 | JavaGuide(Java面试 + 学习指南)](https://javaguide.cn/database/redis/redis-persistence.html)
 
 
 
+### 什么是 RDB 持久化？
+
+- Redis创建快照获得副本，备份。
+
+- 快照持久化是 Redis 默认采用的持久化方式，在 `redis.conf` 配置文件中默认有此下配置：
+
+  - save 时间 变化key的数量
+
+  ```clojure
+  save 900 1           #在900秒(15分钟)之后，如果至少有1个key发生变化，Redis就会自动触发bgsave命令创建快照。
+  
+  save 300 10          #在300秒(5分钟)之后，如果至少有10个key发生变化，Redis就会自动触发bgsave命令创建快照。
+  
+  save 60 10000        #在60秒(1分钟)之后，如果至少有10000个key发生变化，Redis就会自动触发bgsave命令创建快照。
+  ```
+
+### RDB 创建快照时会阻塞主线程吗？
+
+- 同步save
+- fork子线程（default）
 
 
 
+### 什么是 AOF 持久化？AOF 工作基本流程是怎样的？
+
+- **每条**修改命令--->AOF缓冲区--->**appendonly.aof**
+
+ ```bash
+  appendonly yes
+ ```
 
 
 
+1. **命令追加（append）**：所有的写命令会追加到 AOF 缓冲区中。
 
+2. **文件写入（write）**：将 AOF 缓冲区的数据写入到 AOF 文件中。这一步需要调用`write`函数（系统调用），`write`将数据写入到了系统内核缓冲区之后直接返回了（延迟写）。注意！！！**此时并没有同步到磁盘，只有同步到磁盘中才算持久化保存。**
 
+-----
 
+2. **文件同步（fsync）**：AOF 缓冲区根据对应的持久化方式（ `fsync` 策略）向硬盘做同步操作。这一步需要调用 `fsync` 函数（系统调用）， `fsync` 针对单个文件操作，对其进行强制硬盘同步，`fsync` 将阻塞直到写入磁盘完成后返回，保证了数据持久化。
+3. **文件重写（rewrite）**：随着 AOF 文件越来越大，需要定期对 AOF 文件进行重写，达到压缩的目的。
+4. **重启加载（load）**：当 Redis 重启时，可以加载 AOF 文件进行数据恢复。
 
-
-
-
+------
 
 
 
