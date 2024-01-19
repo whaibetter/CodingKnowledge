@@ -424,11 +424,12 @@ HashSet(int initialCapacity, float loadFactor, boolean dummy) {
 
 ### 为什么HashTable ConcurrentHashMap线程安全集合不可以有null的值，HashMap可以有？
 
-- 一个线程边操作，一个线程修改，contains(key)失效，无法判断是没有这个值还是还是值就是null
-  - **HashMap是设计给单线程的**
-  - 如果要使用null 可以用`public static final Object NULL = new Object();`
+**并发场景的歧义问题**
 
-- **多线程下无法正确判定键值对是否存在（存在其他线程修改的情况），单线程是可以的**（不存在其他线程修改的情况）
+- 一个线程边操作，一个线程修改，contains(key)失效，无法判断是没有这个值还是还是值就是null
+  - **多线程下无法正确判定键值对是否存在`contains(key)`（另一个线程在`put(key,null)`时，返回true，期望是false）**，单线程是可以的（不存在其他线程修改的情况）
+  - **HashMap是设计给单线程的**，null值可以正常执行Hash和冲突，不能同时null null
+  - 如果要使用null 可以用`public static final Object NULL = new Object();`
 
 
 

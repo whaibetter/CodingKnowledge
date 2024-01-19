@@ -78,7 +78,7 @@ IO效率高
 
 
 
-### String 的底层实现是什么？
+### Redis String 的底层实现是什么？
 
 Redis 是基于 C 语言编写的，但 Redis 的 String 类型的底层实现并不是 C 语言中的字符串（即以空字符 `\0` 结尾的字符数组），而是自己编写了 [SDSopen in new window](https://github.com/antirez/sds)（Simple Dynamic String，简单动态字符串） 来作为底层实现。
 
@@ -213,12 +213,23 @@ Redis Data Backup File
 
 ### AOF和RDB的区别
 
+**数据恢复方式不同**
+
 - RDB 是达到某个条件就进行快照备份，默认情况下需要fork一个子线程
 - AOF   Redis **执行完写操作命令后**
   - `append` 缓冲区，`write`内核缓冲区
   - 根据不同模式进行控制调用`fsync`的时机 
 
 ![Redis 执行完写操作命令后，AOF 工作基本流程](http://42.192.130.83:9000/picgo/imgs/aof-work-process.png)
+
+**数据完整性不同**
+
+- AOF的数据完整性比RDB高，文件大。
+- RDB文件是紧凑的[二进制](https://so.csdn.net/so/search?q=二进制&spm=1001.2101.3001.7020)文件
+
+**性能不同**
+
+- AOF性能差，RDB性能好。AOF
 
 ### 如何选择AOF和RDB
 

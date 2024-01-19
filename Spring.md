@@ -1095,86 +1095,57 @@ publicclass PersonService {
 
 ### 扁平化对象`@JsonUnwrapped`
 
-```java
-@Getter
-@Setter
-@ToString
-public class Account {
-    private Location location;
-    private PersonInfo personInfo;
+`@JsonUnwrapped`是Jackson库中的一个注解，用于在JSON序列化/反序列化过程中处理对象的扁平化处理。当你在一个类中的某个属性上使用`@JsonUnwrapped`注解时，Jackson库在序列化该对象时，会将该属性的值直接添加到其父对象中，而不是将其封装在一个新的对象中。
 
-  @Getter
-  @Setter
-  @ToString
-  public static class Location {
-     private String provinceName;
-     private String countyName;
-  }
-  @Getter
-  @Setter
-  @ToString
-  public static class PersonInfo {
-    private String userName;
-    private String fullName;
-  }
+```java
+public class User {  
+    private String name;  
+    private int age;  
+    private Address address;  
+  
+    public User(String name, int age, Address address) {  
+        this.name = name;  
+        this.age = age;  
+        this.address = address;  
+    }  
+  
+    @JsonUnwrapped  
+    public Address getAddress() {  
+        return address;  
+    }  
+}  
+  
+public class Address {  
+    private String street;  
+    private String city;  
+    private String country;  
+  
+    public Address(String street, String city, String country) {  
+        this.street = street;  
+        this.city = city;  
+        this.country = country;  
+    }  
 }
 ```
 
-- after
+```JAVA
+Address address = new Address("123 Main St", "Anytown", "Anycountry");  
+User user = new User("John Doe", 30, address);  
+ObjectMapper mapper = new ObjectMapper();  
+String json = mapper.writeValueAsString(user);
+```
 
-```java
-/**
-用于指示属性应“解包”序列化的注释；也就是说，如果将其序列化为 JSON 对象，则其属性将作为其包含对象的属性包含在内。例如，考虑 POJO 的情况，例如：
-   public class Parent {
-     public int age;
-     public Name name;
-   }
-   public class Name {
-     public String first, last;
-   }
- 
-通常会按如下方式序列化（假设 @JsonUnwrapped 没有效果）：
-   {
-     "age" : 18,
-     "name" : {
-       "first" : "Joey",
-       "last" : "Sixpack"
-     }
-   }
- 
-可以改成这样：
-   {
-     "age" : 18,
-     "first" : "Joey",
-     "last" : "Sixpack"
-   }
- 
-通过将父类更改为：
-   public class Parent {
-     public int age;
-     @JsonUnwrapped
-     public Name name;
-   }
- 
-注释只能添加到属性中，而不能添加到类中，因为它是上下文相关的。
-另请注意，注释仅适用于
-值被序列化为 JSON 对象（无法使用此机制解开 JSON 数组）
-序列化是使用BeanSerializer完成的，而不是自定义序列化程序
-不添加类型信息；如果需要添加类型信息，无论包含策略如何，都不能更改结构；所以注释基本上被忽略了。
-*/
-@Getter
-@Setter
-@ToString
-public class Account {
-    @JsonUnwrapped
-    private Location location;
-    @JsonUnwrapped
-    private PersonInfo personInfo;
-    ......
+```JSON
+{  
+  "name": "John Doe",  
+  "age": 30,  
+  "street": "123 Main St",  
+  "city": "Anytown",  
+  "country": "Anycountry"  
 }
 ```
 
-### 测试
+### 测试相关注解
 
 `@ActiveProfiles`**一般作用于测试类上， 用于声明生效的 Spring 配置文件。**
 
