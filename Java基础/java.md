@@ -698,7 +698,14 @@ int in = i; # 装箱
 Integer in2 = in; # 拆箱
 ```
 
+## 为什么重写equal，要重写HashCode？
 
+**确保相等的对象具有相同的哈希码**
+
+- 对象和对象equal，可以比较两个对象
+- 但如果存储在散列表中，获取时会调用HashCode计算在哪个桶，如果两个对象的hashcode不同会存储在不同的地方。
+
+**同理，重写HashCode也应该重写equal**
 
 ## 两个对象 hashCode()相同，则 equals()是否也一定为 true？
 
