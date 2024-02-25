@@ -99,7 +99,7 @@ volatile修饰的变量有可见性，一旦某个线程修改了这样的变量
 >     private int years;
 >     private int months
 >     private volatile int days;
->
+> 
 >     public void update(int years, int months, int days){
 >         this.years  = years;
 >         this.months = months;
@@ -114,6 +114,25 @@ volatile修饰的变量有可见性，一旦某个线程修改了这样的变量
 >
 > instance = new Singleton();的执行过程可能被重排序。
 >
+> ```java
+> public class Singleton {
+>     private volatile static Singleton singleton;
+> 
+>     private Singleton() {}
+> 
+>     public static Singleton getInstance() {
+>         if (singleton == null) { // 1
+>             synchronized(Singleton.class) {
+>                 if (singleton == null) {
+>                     singleton = new Singleton(); // 2
+>                 }
+>             }
+>         }
+>         return singleton;
+>     }
+> } 
+> ```
+>
 > 正常过程如下：
 >
 > 1. 分配内存空间
@@ -124,6 +143,7 @@ volatile修饰的变量有可见性，一旦某个线程修改了这样的变量
 >
 > 1. 分配内存空间
 > 2. instance 实例变量引用
+>    - 这时instance就不为空了
 > 3. 初始化Singleton实例
 >
 > **如果先赋值了instance变量，那么b线程获取的就为null，`if (singleton == null)`为true**
@@ -419,9 +439,9 @@ ThreadLocal的作用是提供**线程内的==局部变量==**，这种变量在�
   class MyTask implements Runnable {
 
       private static final ThreadLocal threadSession = new ThreadLocal();
-
+    
       static int i = 0;
-
+    
       public static MySession getSession() {
           MySession o = (MySession)threadSession.get();
           if (o == null) {
@@ -430,7 +450,7 @@ ThreadLocal的作用是提供**线程内的==局部变量==**，这种变量在�
           }
           return o;
       }
-
+    
       public static void main(String[] args) {
           new Thread(new Runnable() {
               @Override
@@ -495,7 +515,7 @@ public class Demo {
         t2.start();
     }
 }
-```
+  ```
 
 
 
@@ -614,10 +634,10 @@ public static void main(String[] args) {
     >   ```
     >   javaCopy codeimport java.util.concurrent.locks.Lock;
     >   import java.util.concurrent.locks.ReentrantLock;
-    >
+    >  
     >   public class InterruptibleLockExample {
     >       private final Lock lock = new ReentrantLock();
-    >
+    >  
     >       public void performTask() throws InterruptedException {
     >           lock.lockInterruptibly(); // 线程可以被中断
     >           try {

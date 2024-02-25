@@ -711,12 +711,75 @@ com.whai.custom.MyServiceAutoConfiguration
 > 关于下面这些设计模式的详细介绍，可以看我写的 [Spring 中的设计模式详解open in new window](https://javaguide.cn/system-design/framework/spring/spring-design-patterns-summary.html) 这篇文章。
 
 - **工厂设计模式** : Spring 使用工厂模式通过 `BeanFactory`、`ApplicationContext` 创建 bean 对象。
+
 - **代理设计模式** : Spring AOP 功能的实现。
+
 - **单例设计模式** : Spring 中的 Bean 默认都是单例的。
+
 - **模板方法模式** : Spring 中 `jdbcTemplate`、`hibernateTemplate` 等以 Template 结尾的对数据库操作的类，它们就使用到了模板模式。
+
 - **包装器设计模式** : 我们的项目需要连接多个数据库，而且不同的客户在每次访问中根据需要会去访问不同的数据库。这种模式让我们可以根据客户的需求能够动态切换不同的数据源。
+
 - **观察者模式:** Spring 事件驱动模型就是观察者模式很经典的一个应用。
+
+  > - Spring Framework 提供了**事件驱动编程**的支持，通过使用` ApplicationEvent `和  `ApplicationListener  `接口，你可以实现观察者模式的一种形式。
+  >
+  >   ```java
+  >   // 事件定义
+  >   public class MyCustomEvent extends ApplicationEvent {
+  >       // ...
+  >   }
+  >   
+  >   // 监听器
+  >   @Component
+  >   public class MyCustomEventListener implements ApplicationListener<MyCustomEvent> {
+  >       @Override
+  >       public void onApplicationEvent(MyCustomEvent event) {
+  >           // 处理事件
+  >       }
+  >   }
+  >   
+  >   // 发布事件
+  >   @Service
+  >   public class MyEventPublisher {
+  >       @Autowired
+  >       private ApplicationEventPublisher eventPublisher;
+  >   
+  >       public void publishEvent() {
+  >           // 发布事件
+  >           eventPublisher.publishEvent(new MyCustomEvent(this));
+  >       }
+  >   }
+  >   ```
+  >
+
 - **适配器模式** : Spring AOP 的增强或通知(Advice)使用到了适配器模式、spring MVC 中也是用到了适配器模式适配`Controller`。
+
+  > ```java
+  > public interface HandlerAdapter {
+  > 
+  > 	boolean supports(Object handler);
+  > 	
+  > 	@Nullable
+  > 	ModelAndView handle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception;
+  > 
+  > 	long getLastModified(HttpServletRequest request, Object handler);
+  > }
+  > ```
+  >
+  > - 根据不同类型的Handler（即Controller）进行不同操作
+  >
+  > ```java
+  > if(mappedHandler.getHandler() instanceof MultiActionController){  
+  >    ((MultiActionController)mappedHandler.getHandler()).xxx  
+  > }else if(mappedHandler.getHandler() instanceof XXX){  
+  >     ...  
+  > }else if(...){  
+  >    ...  
+  > }  
+  > ```
+  >
+
 - ……
 
 ## Spring 事务

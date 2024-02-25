@@ -703,9 +703,56 @@ Integer in2 = in; # 拆箱
 **确保相等的对象具有相同的哈希码**
 
 - 对象和对象equal，可以比较两个对象
-- 但如果存储在散列表中，获取时会调用HashCode计算在哪个桶，如果两个对象的hashcode不同会存储在不同的地方。
+- 但如果存储在散列表如Set中，contains(key)，获取时会调用HashCode计算在哪个桶，如果两个对象的hashcode不同会存储在不同的地方。
+
+```java
+class Person {
+
+    public static void main(String[] args) {
+
+        HashSet<Person> set = new HashSet<>();
+
+        set.add(new Person(1, "1"));
+        set.add(new Person(1, "1"));
+        set.forEach(p -> System.out.println(p)); 
+    }
+
+    int age;
+    String name;
+
+    public Person(int age, String name) {
+        this.age = age;
+        this.name = name;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof Person){
+            Person person = (Person)obj;
+            return name.equals(person.name);
+        }
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+}
+```
 
 **同理，重写HashCode也应该重写equal**
+
+> 如果只重写了hash或者equal，Set内会出现两个一样的。
+>
+> - 只写了Hash，hash相等，**equals默认比较内存地址**，**内存地址不相等**。
+> - 只写了equal，不写hash，集合里的hash计算位置会映射到不一样的桶里。
+>
+> equal相同（==比较地址），hash一定相同
+>
+> hash相同，不一定是一个对象
+>
+> 在String类中，equals()返回的是两个对象内容的比较，当两个对象内容相等时，Hashcode()方法根据String类的重写代码的分析，也可知道hashcode()返回结果也会相等。
 
 ## 两个对象 hashCode()相同，则 equals()是否也一定为 true？
 
