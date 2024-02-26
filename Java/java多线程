@@ -146,7 +146,7 @@ volatile修饰的变量有可见性，一旦某个线程修改了这样的变量
 >    - 这时instance就不为空了
 > 3. 初始化Singleton实例
 >
-> **如果先赋值了instance变量，那么b线程获取的就为null，`if (singleton == null)`为true**
+> 如果先赋值了instance变量，那么b线程`if (singleton == null)`为false，但==线程B使用了一个**没有被初始化的对象引用**==
 >
 > - **使用volatile就能避免重排序**
 
@@ -171,7 +171,7 @@ class LazySingletonDCL{
 
     public static Singleton getInstance() {
 
-        if (singleton == null) {
+        if (singleton == null) { //线程1，2同时到达，如果均通过（instance == null）判断。，防止重复创建对象，所以下面还使用了if (singleton == null)
             synchronized (Singleton.class){ // 防止其他线程也创建Singleton
                 if (singleton == null){
                     return new Singleton();
@@ -184,7 +184,17 @@ class LazySingletonDCL{
 }
 ```
 
-
+> 1. 为什么使用两个if(=null)
+>
+>    **A线程释放锁后，没有第二个if会被重复new**
+>
+>    防止两个线程同时进入第一个if，**线程A创建对象，释放锁**，如果没有第二个if，会重复创建对象。
+>
+> 2. 为什么使用volatile？
+>
+>    **如果先赋值再初始化，B线程会使用到没有初始化的对象**
+>
+>    指令重排序，如果先赋值了instance变量，那么b线程`if (singleton == null)`为false，但==线程B使用了一个**没有被初始化的对象引用**==
 
 ## 问题：synchronized和volatile的区别
 
@@ -634,10 +644,10 @@ public static void main(String[] args) {
     >   ```
     >   javaCopy codeimport java.util.concurrent.locks.Lock;
     >   import java.util.concurrent.locks.ReentrantLock;
-    >  
+    >    
     >   public class InterruptibleLockExample {
     >       private final Lock lock = new ReentrantLock();
-    >  
+    >    
     >       public void performTask() throws InterruptedException {
     >           lock.lockInterruptibly(); // 线程可以被中断
     >           try {
