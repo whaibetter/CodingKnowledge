@@ -118,9 +118,40 @@ List<BlogMain> blogPages = blogMainMapper.getBlogPages(new RowBounds(0, 3));
 
 延迟加载的基本原理：**需要的时候才去单独调用事先保存好的sql**
 
- 在`CGLIB` 创建目标对象的代理对象的invoke中、如果**需要的字段**B为null，才会查询B并set。
+ 在`CGLIB` **创建目标对象的代理对象**的invoke中、如果**需要的字段**B为null，才会查询B并set。
 
 - MyBatis 会将关联查询的操作**推迟到实际需要使用数据时**才执行
+
+> Mybatis 仅支持`  association ` 关联对象和`  collection`  关联集合对象的延迟加载
+>
+> - ` association ` 指的就是一对一，
+> - ` collection ` 指的就是一对多查询。
+>
+> 在 Mybatis配置文件中，可以配置是否启用延迟加载` lazyLoadingEnabled=true|false` 。
+>
+> 它的原理是，使用 CGLIB 创建目标对象的代理对象，当调用目标方法时，进入拦截器方法
+>
+> 比如调用 a.getB().getName()，拦截器 **invoke()方法发现 a.getB()是null 值**，那么就会单独发送事先保存好的查询关联 B 对象的 sql，**把 B 查询上来**，然后调用 a.setB(b)，于是 a 的对象 b 属性就有值了，接着完成 a.getB().getName()方法的调用。这就是延迟加载的基本原理。
+> 当然了，不光是 Mybatis，几乎所有的包括 Hibernate，支持延迟加载的原理都
+> 是一样的。
+
+> ```XML
+> <resultMap id="userMap" type="com.example.model.User">
+>     <id column="id" property="id"/>
+>     <result column="username" property="username"/>
+>     <result column="password" property="password"/>
+>     //配置延迟加载方式为lazy
+>     <collection property="orderList" ofType="com.example.model.Order" select="getOrderListByUserId"
+>                 fetchType="lazy"/>
+>     //配置延迟加载方式为eager
+>     <collection property="accountList" ofType="com.example.model.Account" select="getAccountListByUserId"
+>                 fetchType="eager"/>
+> </resultMap>
+> ```
+>
+> 只有在需要使用orderList的时候才会再去查询order
+>
+> - 避免了表连接，但可能需要频繁进行查询
 
 ### MyBatis 的 xml 映射文件中，不同的 xml 映射文件，id 是否可以重复？
 
