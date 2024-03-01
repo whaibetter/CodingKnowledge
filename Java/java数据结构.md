@@ -534,3 +534,16 @@ public class Hashtable<K,V>
 
 - BlockingQueue（阻塞队列）是一个接口，继承自 Queue
 
+## CopyOnWriteArrayList
+
+### CopyOnWriteArrayList 到底有什么厉害之处？有什么优缺点？
+
+- `CopyOnWriteArrayList` 线程安全的核心在于其采用了 **写时复制（Copy-On-Write）** 的策略
+
+> 优点：读操作不加锁，性能很好。读读不冲突
+>
+> 缺点：
+>
+> 1. 内存占用，每次copy
+> 2. 写开销，同上
+> 3. 数据一致性：写操作不会立刻生效
