@@ -1,3 +1,5 @@
+[toc]
+
 ## JVM内存区域
 
 ### JVM1.6、1.7、1.8的内存区别
@@ -39,9 +41,183 @@
 
 特点：程序计数器是**唯一一个不会出现 `OutOfMemoryError` 的内存区域**，它的生命周期随着线程的创建而创建，随着线程的结束而死亡。
 
+## 类加载子系统
+
+![image-20240224171708354](http://42.192.130.83:9000/picgo/imgs/image-20240224171708354.png)
+
+### 类加载器是什么？有什么组成？有什么作用？
+
+#### 是什么？有什么作用？
+
+- ClassLoader 负责 class 文件的加载
+
+![image-20200705081913538](https://img-blog.csdnimg.cn/img_convert/e8172076eaa7a152408633a353f06b2c.png)
+
+- .class file 加载到 JVM 中，被称为 DNA 元数据模板，放在**方法区**。
+- 在**.class 文件->JVM->最终成为元数据模板**，此过程就要一个运输工具（类装载器 Class Loader），扮演一个快递员的角色。
+
+#### **有什么组成**？
+
+- **引导类加载器（BootStrap）**核心库、ExtClassLoader和System ClassLoader的父类，加载java、javax、sun等开头的类。
+- **扩展类加载器（ExtClassLoader）**从jre/1ib/ext加载，或指定java.ext.dirs的加载
+- **系统类加载器（System ClassLoader）应用程序类加载器**，程序中默认的类加载器
+
+![image-20200705094149223](https://img-blog.csdnimg.cn/img_convert/1e553c6d5254f827d2dfab537bea3ab9.png)
+
+![image-20200705081813409](http://42.192.130.83:9000/picgo/imgs/3569bfb903e80b66ee7e972a6b4a5036.png)
+
+### 类的加载过程是什么样？作用是什么？
+
+![image-20200705082601441](https://img-blog.csdnimg.cn/img_convert/a9497a1eeb7fae3022846b509186fdcd.png)
+
+#### 加载阶段：**静态存储结构**转化为方法区的**运行时数据结构**
+
+类的全限定名获取类的字节流，**静态存储结构**转化为方法区的**运行时数据结构**
+
+#### 连接阶段：验证、static设默认、引用转换
+
+1. **验证（Verify）**：验证有效性。
+   - 文件格式验证，元数据验证，字节码验证，符号引用验证
+2. **准备（Prepare）**：**为static变量设置==默认值==**，不会对实例变量分配初始化。
+   - 这里不包含用 final 修饰的 static， final 在**编译**的时候就会分配了，准备阶段会显式初始化；
+   - 这里不会为实例变量（成员变量）分配初始化，实例变量在堆中
+3. **解析（Resolve）**：将常量池内的<mark>符号引用转换为直接引用</mark>的过程。
+   - 事实上，解析操作往往会伴随着 JVM 在执行完初始化之后再执行。
+   - 解析动作主要针对类或接口、字段、类方法、接口方法、方法类型等。对应常量池中的 CONSTANT_Class_info，CONSTANT_Fieldref_info、CONSTANT_Methodref_info 等。
+
+#### 初始化阶段：类构造器，收集类变量（staic）和static块合并，顺序执行。
+
+- **&lt;clinit&gt;() **：==初始化阶段就是执行**类构造器方法**&lt;clinit&gt;()的过程。==
+- **自动收集：** 是 javac 编译器**自动收集类中的所有类变量的赋值动作和静态代码块**中的语句==**合并**==而来。
+- **顺序执行：**构造器方法中指令按语句在**源文件中出现的顺序执行**。
+- **优先父类：**若该类具有父类，JVM 会保证子类的&lt;clinit&gt;()执行前，父类的&lt;clinit&gt;()已经执行完毕。
+- **只执行一次：**类加载到内存中进入方法区，只调用一次\<clinit>
+
+
+
+![image-20200705081813409](http://42.192.130.83:9000/picgo/imgs/3569bfb903e80b66ee7e972a6b4a5036.png)
+
+### 获取 ClassLoader 的途径？
+
+- 方式一：获取当前 ClassLoader  **类**
+
+  ```java
+  clazz.getClassLoader()
+  ```
+
+- 方式二：获取当前**线程上下文**的 ClassLoader 
+
+  ```java
+  Thread.currentThread().getContextClassLoader()
+  ```
+
+- 方式三：获取**系统**的 ClassLoader 
+
+  ```java
+  ClassLoader.getSystemClassLoader()
+  ```
+
+- 方式四：获取**调用者**的 ClassLoader
+
+  ```java
+  DriverManager.getCallerClassLoader()
+  ```
+
+### 双亲委派机制是什么？工作原理？解决了什么问题？
+
+- **会优先委派上级类加载器进行类加载**。
+- 避免类的重复加载，保护程序**安全**，防止核心 API 被随意篡改,**不能用java包名**
+
+> ### 工作原理
+>
+> 1. 类加载请求，**优先委托给父类加载器**
+>    1. 父类可以加载，由父类加载
+>    2. 父类不能加载才看子类能不能加载
+> 2. 都不行ClassNotFound
+>
+> ![image-20200705105151258](https://img-blog.csdnimg.cn/img_convert/05fa27fcc38eeaaa5babff55a00882a3.png)
+>
+> 如**java.lang.String**只会从Bootstrap ClassLoader中加载。
+>
+> - ==引导类加载器（Bootstrap ClassLoader）==   Java 的核心库（JAVA_HOME/jre/lib/rt.jar、resources.jar 或 sun.boot.class.path 路径下的内容），用于提供 JVM 自身需要的类。Bootstrap 启动类加载器只加载包名为 java、javax、sun 等开头的类
+> - <mark>自定义类加载器（User-Defined ClassLoader）</mark>。所有派生于抽象类 ClassLoader 的类加载器都划分为自定义类加载器
+>   - **扩展类加载器（Extension ClassLoader）** java.ext.dirs 系统属性所指定的目录中加载类库，或从 JDK 的安装目录的 jre/1ib/ext 子目录（扩展目录）下加载类库
+>   - **应用程序类加载器（系统类加载器，System Class Loader; App ClassLoader）**默认的类加载器
+
+### 沙箱安全机制是什么？
+
+- **将Java代码==限定在虚拟机（JVM）特定的运行范围==中，并且严格限制代码对本地系统资源的访问**
+
+如自定义的java.lang.String不能生效，引导类加载器（Bootstrap ClassLoader）会加载jdk自带的String
+
+自定义 String 类，但是**在加载自定义 String 类的时候会率先使用引导类加载器加载**，而引导类加载器在加载的过程中会先加载 jdk 自带的文件（rt.jar 包中 java\lang\String.class），报错信息说没有 main 方法，就是因为加载的是 rt.jar 包中的 string 类。这样可以保证对 java 核心源代码的保护，这就是沙箱安全机制。
+
+
+
+### 如何判断两个 class 对象是否相同？
+
+- 类名相同
+- 类加载器相同
+
+### 什么地方会存储ClassLoader信息
+
+- 方法区（元空间）[**常量池**、**运行时常量池**，*字符串常量池*、*静态变量*]
+
+### 类的主动使用和被动使用？
+
+区别：**类是否会初始化\<clint>**
+
+#### **主动使用**
+
+1. 创建类的实例
+
+2. 访问某个类或接口的静态变量，或者对该静态变量赋值
+
+3. 调用类的静态方法
+
+4. 反射（比如：Class.forName（"com.atguigu.Test"））
+
+5. 初始化一个类的子类
+
+6. Java 虚拟机启动时被标明为启动类的类
+
+7. JDK 7 开始提供的动态语言支持：
+
+   java.lang.invoke.MethodHandle 实例的解析结果
+
+   REF_getStatic、REF_putStatic、REF_invokeStatic 句柄对应的类没有初始化，则初始化
+
+#### 被动使用
+
+除了以上七种情况，其他使用 Java 类的方式都被看作是对<mark>类的被动使用</mark>，都<mark>不会导致类的初始化</mark>。
+
+虽然是以Dson.count 形式调用的，但是因为count是Dfather的静态成员变量，所以只初始化Dfather类，而不初始化Dson类
+
+```java
+class Dfather{  
+    static int count = 1;  
+    static{  
+        System.out.println("Initialize class Dfather");  
+    }  
+}  
+  
+class Dson extends Dfather{  
+    static{  
+        System.out.println("Initialize class Dson");  
+    }  
+}  
+  
+public class Test4 {  
+    public static void main(String[] args) {  
+        int x = Dson.count;  
+    }  
+}  
+// Initialize class Dfather
+```
+
+
+
 ## 栈
-
-
 
 ### [Java 虚拟机栈是什么？由什么组成？](https://javaguide.cn/java/jvm/memory-area.html#java-虚拟机栈)
 
@@ -94,8 +270,8 @@ Java 方法有两种返回方式，一种是 **return 语句正常返回**，一
 
 错误：
 
-1. **`StackOverFlowError`：** 若栈的内存大小不允许动态扩展，那么当线程请求栈的深度超过当前 Java 虚拟机栈的最大深度的时候，就抛出 `StackOverFlowError` 错误。
-2. **`OutOfMemoryError`：** 如果栈的内存大小可以动态扩展， 如果虚拟机在动态扩展栈时无法申请到足够的内存空间，则抛出`OutOfMemoryError`异常。
+1. **`StackOverFlowError`：** 若**栈的内存大小不允许**动态扩展，那么当线程请求栈的深度超过当前 Java 虚拟机栈的最大深度的时候，就抛出 `StackOverFlowError` 错误。
+2. **`OutOfMemoryError`：** 如果栈的内存大小可以动态扩展， 如果虚拟机在动态**扩展栈时无法申请到足够的内存空间**，则抛出`OutOfMemoryError`异常。
 
 ### 静态变量与局部变量的对比 ？
 
@@ -185,7 +361,7 @@ public void testAddOperation();
 > 1. 执行引擎遇到任意一个方法返回的字节码指令（return），会有返回值传递给上层的方法调用者，简称<mark>正常完成出口</mark>；
 >    - 一个方法在正常调用完成之后，究竟需要使用哪一个返回指令，还需要根据方法返回值的实际数据类型而定。
 >    - 在字节码指令中，返回指令包含 **ireturn**（当返回值是 boolean，byte，char，short 和 int 类型时使用），lreturn（Long 类型），freturn（Float 类型），dreturn（Double 类型），areturn。另外还有一个 return 指令声明为 void 的方法，实例初始化方法，类和接口的初始化方法使用。
-> 2. 在方法执行过程中遇到异常（Exception），并且这个异常没有在方法内进行处理，也就是只要在本方法的异常表中没有搜索到匹配的异常处理器，就会导致方法退出，简称<mark>异常完成出口</mark>。
+> 2. 在方法执行过程中遇到异常（Exception），并且这个异常没有在方法内进行处理，也就是只要在**本方法的异常表（在方法区）**中没有搜索到匹配的异常处理器，就会导致方法退出，简称<mark>异常完成出口</mark>。
 
 ### 举例栈溢出的情况？
 
@@ -223,7 +399,7 @@ StackOverFlowError
 
 ## [堆](https://javaguide.cn/java/jvm/memory-area.html#堆)
 
-### 什么是堆，里面包含了什么？
+### 什么是堆，里面包含了什么？不同版本对比？
 
 - 存放对象实例
 
@@ -544,7 +720,157 @@ jd7之前在方法区（永久代）中，jdk7 中将 StringTable 放到了堆�
 
 在大量使用反射、动态代理、CGLib 等字节码框架，动态生成 JSP 以及 OSGi 这类频繁自定义类加载器的场景中，<u>通常都需要 Java 虚拟机具备类型卸载的能力，以保证不会对方法区造成过大的内存压力</u>。
 
+## 对象实例化及直接内存
 
+### 创建对象的方式？
+
+1. new：Xxx 的静态方法，XxxBuilder/XxxFactory 的静态方法
+2. Class.newInstance 只能调用空参public
+3. Class.getConstuctor.invoke，可以调用**多参数的方式**，权限没有要求。
+4. clone()。Cloneable接口
+5. 序列化：网络、文件ObjectInputStream
+6. 第三方库 Objenesis
+
+### Object o = new Object()创建对象的步骤？
+
+1.  判断对象对应的类是否**加载、链接（verify、prepare、resolve）、初始化**（类元信息）
+   - 检查 new 是否在常量池中存在。
+   - 没有初始化，在双亲委派模式下，使用当前**类加载器**以 ClassLoader + 包名 + 类名为 key 进行查找**对应的 .class 文件**；
+2. 为对象分配内存
+3. 处理并发问题，CAS、TLAB
+4. 初始化分配到的内存（**堆中的对象**的参数初始化）
+5. 设置对象的**对象头（元数据信息、HashCode、GC信息、锁信息）**
+6. 执行 **init 方法（构造器）**进行初始化；初始化成员变量，执行实例化代码块，调用类的构造方法
+
+### 对象头（Header）包含了什么？
+
+对象头包含了两部分，分别是<mark>运行时元数据（Mark Word）</mark>和<mark>类型Class指针</mark>。如果是数组，还需要记录数组的长度
+
+> #### 运行时元数据
+>
+> - **哈希**值（HashCode）
+> - **GC 分代**年龄
+> - **锁**状态标志
+> - 线程**持有的锁**
+> - 偏向线程 ID
+> - 翩向时间戳
+>
+> #### 类型指针
+>
+> - ==指向（方法区、元空间）类元数据 InstanceClass==，确定该对象所属的类型。
+
+### 绘制下图的内存结构
+
+```java
+public class Customer{
+ int id = 1001;
+ String name;
+ Account acct;
+
+ {
+     name = "匿名客户";
+ }
+
+ public Customer() {
+     acct = new Account();
+ }
+}
+
+public class CustomerTest{
+ public static void main(string[] args){
+     Customer cust=new Customer();
+ }
+}
+```
+
+![第10章_图示对象的内存布局](http://42.192.130.83:9000/picgo/imgs/第10章_图示对象的内存布局.jpg)
+
+
+
+### JVM 是如何通过**栈帧中的对象引用访问到其内部的对象**实例呢？
+
+- 栈帧（局部变量表）---> 堆（对象实体）--->方法区（类型信息）
+
+### 什么是句柄访问？优缺点？HotSpot采用了什么？
+
+对象和类型分开存储。
+
+优点：改变对象不用改变类型指针。
+
+![image-20210510230241991](http://42.192.130.83:9000/picgo/imgs/59cc079fe02b7a5836ff7c2c7fffb635.png)
+
+直接指针（HotSpot 采用）
+
+- **对象**实体存储**类型指针**
+
+  优点：访问方便
+
+![image-20210510230337956](http://42.192.130.83:9000/picgo/imgs/694601dcb023c6d10168a00fe000becc.png)
+
+
+
+## 执行引擎
+
+### 执行引擎是什么？包含了什么？各自的作用是什么？
+
+- **解释器**。读取**字节码**并将其解释（转换）为**机器码**（本机代码）并按顺序执行。
+- **JIT编译器**。为了克服解释器每次都解释，甚至多次解释相同的方法，降低系统性能的问题而被引入。
+- **垃圾回收器**。负责回收JVM中的不再使用的内存空间。
+
+
+
+### 执行引擎的工作流程？
+
+**输入的是字节码二进制流，输出的是执行过程**
+
+1. 执行引擎根据PC寄存器，需要执行什么字节码
+2. 执行完后更新PC寄存器
+3. 执行的过程中，根据 **局部变量表、对象头元数据指针**定位实例信息
+
+![image-20200710081627217](http://42.192.130.83:9000/picgo/imgs/a03c1910e508456b690ec9088300de5f.png)
+
+### Java 代码编译和解释?
+
+ Java 通常被归类为“编译型”语言，但实际上它的运行过程包含编译和解释两个阶段
+
+编译阶段：转换为中间语言，再进行优化或执行。
+
+1. **前端编译（javac）**：Java代码的编译，javac（.java）将源码编译为JVM字节码（.class）**静态**
+2. **后端编译（即时编译JIT）：**运行时将JVM字节码经过JIT(即时)编译器转换为本地机器代码。**动态**
+
+解释阶段：采用**逐行解释**的方式执行。
+
+![image-20200710082141643](http://42.192.130.83:9000/picgo/imgs/e2a8ec10bc97a061e4b77abf63936ba1.png)
+
+![image-20200710082433146](http://42.192.130.83:9000/picgo/imgs/93e5f0b67767b7d783ace2471447f449.png)
+
+![image-20200710083036258](http://42.192.130.83:9000/picgo/imgs/bf1139f9652e2a1ac0cab00df869e23e.png)
+
+### 为什么 Java 是半编译半解释型语言？
+
+- ==同时结合了**编译**和**解释**==
+- 编译器：**速度快**；但编译器要想发挥作用，把代码编译成本地代码，需要一定的执行时间。
+- 解释器：当程序启动后，**解释器可以马上发挥作用（逐行）**，省去编译的时间，立即执行。
+
+JDK1.0 时代，将 Java 语言定位为“解释执行”还是比较准确的。再后来，Java 也发展出可以直接生成本地代码的编译器。现在 JVM 在执行 Java 代码的时候，通常都会将**解释执行与编译执行**二者结合起来进行。
+
+**图示**
+
+![image-20200710083656277](http://42.192.130.83:9000/picgo/imgs/f10a353479e6d2bca99abd4781fd9940.png)
+
+### JIT的工作原理？热点代码及探测技术？
+
+- ==**缓存**函数体编译成机器码，执行时只执行机器码（编译码）==，不用重新编译
+
+**JIT 的即时编译的技术**，目的是避免函数被解释执行，而是将整个函数体编译成机器码，每次**函数执行时，只执行编译后的编译码**即可，这种方式大大的提升了执行效率。
+
+#### 什么时候使用JIT编译器？
+
+- “热点代码”，计数器来统计 ==方法调用次数、循环体次数==
+  - **方法调用计数器**用于统计**方法的调用次数**
+  - **回边计数器**则用于统计**循环体执行的循环次数**
+
+## [StringTable](./StringTable.md)
 
 ## 面试真题
 
