@@ -12,9 +12,6 @@
 
 ```java
 String a = "d"; 
-String b = new String("d");
-
-String a = "d"; 
 String b = "d"; 
 System.out.println(a == b);
 a = new String("d"); 
@@ -33,7 +30,7 @@ a = new String("d"); //对象，存堆
 System.out.println(a == b);//false
 ```
 
-### String 的内存分配在哪？
+### StringTable 的内存分配在哪？
 
 - JDK 1.6 永久代
 - JDK 1.7 堆，因为永久代空间小
