@@ -694,19 +694,183 @@ Integer、Double等都实现了`Comparable`接口，可以进行自然排序，�
 
 
 
-## int 和 Integer 有什么区别，还有 Integer 缓存实现 4
+## int 和 Integer 有什么区别，还有 Integer 缓存实现，Integer和int的比较？
+
+```java
+Integer a = new Integer(100);
+Integer b = new Integer(100);
+System.out.println(a == b); 
+Integer c = new Integer(100);
+int d = 100;
+System.out.println(c == d); 
+Integer e = new Integer(100); 
+Integer f = 100; 
+System.out.println(e == f);
+Integer g = 100;
+Integer h = 100;
+System.out.println(g == h);
+Integer j = 128;
+Integer i = 128;
+System.out.println(i == j);
+```
 
 - 基本类型 引用类型，Integer需要判空
+
 - **默认值** 0 null
+
 - **存储空间** int类型是直接存储在栈空间，Integer存储在堆内存
+
 - **Integer 缓存机制**：为了节省内存和提高性能，Integer 类在内部通过**使用相同的对象引用实现缓存和重用**，Integer 类默认在**-128 ~ 127** 之间，可以通过 JVM设置- XX:AutoBoxCacheMax 进行修改，且这种机制仅在**自动装箱**时候有用，在使用构造器创建Integer 对象时无用。
+
+  ```java
+  public static Integer valueOf(int i) {
+      if (i >= IntegerCache.low && i <= IntegerCache.high) // 缓存-128到127
+          return IntegerCache.cache[i + (-IntegerCache.low)];
+      return new Integer(i);
+  }
+  ```
+
+  > 1. **有new必然是对象地址比较**
+  > 2. **Integer与Integer比较，常量比较常量valueOf会缓存-128-127，不在这个区间就new Integer()**
+  > 3. **int 与Integer = 100比较，Integer会自动拆箱为int**
+
+  
+
+  > ==Integer和int比较会自动拆箱变为int与int比较==
+  >
+  > - Integer a =100 指向常量池，Integer a = new Integer(100) 指向堆
+  > - Integer a=(127...)对象，进行比较时，如果两个变量的值在区间-128到127之间，则比较结果为true，如果两个变量的值不在此区间，则比较结果为false
+  >   - 编译Integer i = 100 ;时，会翻译成为Integer i = Integer.valueOf(100)
+
+  ```java
+  Integer a = new Integer(100);
+  Integer b = new Integer(100);
+  System.out.println(a == b); //false 两个对象，指向不同的对象
+  /**
+   *   0 new #2 <java/lang/Integer>
+   *   3 dup
+   *   4 bipush 100
+   *   6 invokespecial #3 <java/lang/Integer.<init> : (I)V>
+   *   9 astore_1
+   *  10 new #2 <java/lang/Integer>
+   *  13 dup
+   *  14 bipush 100
+   *  16 invokespecial #3 <java/lang/Integer.<init> : (I)V>
+   *  19 astore_2
+   *  20 getstatic #4 <java/lang/System.out : Ljava/io/PrintStream;>
+   *  23 aload_1
+   *  24 aload_2
+   *  25 if_acmpne 32 (+7)
+   *  28 iconst_1
+   *  29 goto 33 (+4)
+   *  32 iconst_0
+   *  33 invokevirtual #5 <java/io/PrintStream.println : (Z)V>
+   */
+  ```
+
+  ```java
+  Integer c = new Integer(100);
+  int d = 100;
+  System.out.println(c == d); //true 在这里自动拆箱为int
+  /**
+   *  36 new #2 <java/lang/Integer>
+   *  39 dup
+   *  40 bipush 100
+   *  42 invokespecial #3 <java/lang/Integer.<init> : (I)V>
+   *  45 astore_3
+   *  46 bipush 100
+   *  48 istore 4
+   *  50 getstatic #4 <java/lang/System.out : Ljava/io/PrintStream;>
+   *  53 aload_3
+   *  54 invokevirtual #6 <java/lang/Integer.intValue : ()I> // Integer自动拆箱为int
+   *  57 iload 4
+   *  59 if_icmpne 66 (+7)
+   *  62 iconst_1
+   *  63 goto 67 (+4)
+   *  66 iconst_0
+   *  67 invokevirtual #5 <java/io/PrintStream.println : (Z)V>
+   */
+  
+  ```
+
+  ```java
+  Integer e = new Integer(100); // 堆
+  Integer f = 100; // 常量池
+  System.out.println(e == f); //false
+  /**
+   * 70 new #2 <java/lang/Integer>
+   *  73 dup
+   *  74 bipush 100
+   *  76 invokespecial #3 <java/lang/Integer.<init> : (I)V>
+   *  79 astore 5
+   *  81 bipush 100
+   *  83 invokestatic #7 <java/lang/Integer.valueOf : (I)Ljava/lang/Integer;> //自动装箱，之后其实是一个new Integer(100)
+   *  86 astore 6
+   *  88 getstatic #4 <java/lang/System.out : Ljava/io/PrintStream;>
+   *  91 aload 5
+   *  93 aload 6
+   *  95 if_acmpne 102 (+7)
+   *  98 iconst_1
+   *  99 goto 103 (+4)
+   * 102 iconst_0
+   * 103 invokevirtual #5 <java/io/PrintStream.println : (Z)V>
+   */
+  ```
+
+  ```java
+  Integer g = 100;
+  Integer h = 100;
+  System.out.println(g == h); //true
+  /**
+   * 106 bipush 100
+   * 108 invokestatic #7 <java/lang/Integer.valueOf : (I)Ljava/lang/Integer;>
+   * 111 astore 7
+   * 113 bipush 100
+   * 115 invokestatic #7 <java/lang/Integer.valueOf : (I)Ljava/lang/Integer;>
+   * 118 astore 8
+   * 120 getstatic #4 <java/lang/System.out : Ljava/io/PrintStream;>
+   * 123 aload 7
+   * 125 aload 8
+   * 127 if_acmpne 134 (+7)
+   * 130 iconst_1
+   * 131 goto 135 (+4)
+   * 134 iconst_0
+   * 135 invokevirtual #5 <java/io/PrintStream.println : (Z)V>
+   */
+  ```
+
+  ```java
+  // java API中对Integer类型的valueOf的定义如下，对于-128到127之间的数，会进行缓存
+  // sipush指令用于加载-32768到32767之间的整数常量到操作数栈中，而bipush指令则用于加载-128到127之间的整数常量到操作数栈中
+  Integer j = 128;
+  Integer i = 128;
+  System.out.println(i == j); //false
+  /**
+   * 138 sipush 128
+   * 141 invokestatic #7 <java/lang/Integer.valueOf : (I)Ljava/lang/Integer;>
+   * 144 astore 9
+   * 146 sipush 128
+   * 149 invokestatic #7 <java/lang/Integer.valueOf : (I)Ljava/lang/Integer;>
+   * 152 astore 10
+   * 154 getstatic #4 <java/lang/System.out : Ljava/io/PrintStream;>
+   * 157 aload 10
+   * 159 aload 9
+   * 161 if_acmpne 168 (+7)
+   * 164 iconst_1
+   * 165 goto 169 (+4)
+   * 168 iconst_0
+   * 169 invokevirtual #5 <java/io/PrintStream.println : (Z)V>
+   * 172 return
+   */
+  ```
+
 
 ### 装箱拆箱
 
 ```java
 Integer i = 1；
-int in = i; # 装箱
-Integer in2 = in; # 拆箱
+int in = i; # 拆箱 dan
+Integer in2 = in; # 装箱
 ```
 
 ## 为什么重写equal，要重写HashCode？
