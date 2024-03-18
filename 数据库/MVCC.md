@@ -74,3 +74,24 @@
 
 不同事务或者相同事务的对同一记录行的修改，会使该记录行的 `undo log` 成为一条链表，链首就是最新的记录，链尾就是最早的旧记录
 
+### [Read Committed（读提交）和Repeatable Read（可重复读）隔离级别下 MVCC 的差异](https://javaguide.cn/database/mysql/innodb-implementation-of-mvcc.html#rc-和-rr-隔离级别下-mvcc-的差异)
+
+- 不可重复读问题：两次读取不一样；使用**快照读**可以解决。
+- 幻读问题：串行化
+
+在 **Read Committed** 隔离级别下的 **每次`select` 查询**前都生成一个`Read View` (m_ids 列表)：每次读取都用一个快照（Read View 读视图）（解决读脏问题）
+
+在 **Repeatable Read** 隔离级别下只在**事务开始**后 **`第一次select`** 数据前生成一个`Read View`（m_ids 列表）：每次事务都用一个快照（解决不可重复读问题）
+
+**Consistent Read（一致性读取）**：
+
+- 在InnoDB中，当事务执行读取操作时，默认使用**一致性读取（Consistent Read）机制**，即**事务开始时的Read View决定了事务所能看到的数据版本**。
+- 通过一致性读取，事务可以读取到事务开始时的一致性数据，即使其他事务在执行过程中对数据进行了修改，事务也不会看到这些修改，从而实现了事务的隔离性。
+
+### MVCC解决不可重复读问题
+
+ 在 RC 隔离级别下，**每次查询生成一个Read View**，导致不可重复读。
+
+- 解决：每次**事务开始时**生成一个Read View；确保事务内的查询读取到的都是一个Read View。
+
+详情：[InnoDB存储引擎对MVCC的实现 | JavaGuide](https://javaguide.cn/database/mysql/innodb-implementation-of-mvcc.html#mvcc-解决不可重复读问题)
