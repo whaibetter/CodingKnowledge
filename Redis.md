@@ -813,6 +813,10 @@ Redis 事务是**不支持回滚（roll back）**操作的。因此，Redis 事�
 
 > `aof_fsync`后台线程调用`fsync`可能阻塞
 >
+> - append、write是主线程。
+>
+> fsync操作**可能是由主线程执行的**，也可能是由后台线程执行的（在`everysec`策略下）。但需要注意的是，即使在`everysec`策略下，主线程仍然会监控fsync的执行进度，并在必要时进行阻塞
+>
 > `fsync`策略：
 >
 > - `appendfsync always` write后立刻fsync
@@ -874,7 +878,11 @@ Redis 事务是**不支持回滚（roll back）**操作的。因此，Redis 事�
    >
    > ![Bloom Filter 的简单原理示意图](https://oss.javaguide.cn/github/javaguide/cs-basics/algorithms/bloom-filter-simple-schematic-diagram.png)
 
-   
+
+### 布隆过滤器的大小如何确定？
+
+-  Bloom的缺点：误算率，随着**存入的元素数量增加，误算率随之增加**。但是如果元素数量太少，则使用散列表足矣。
+  - 一般情况下**不能从布隆过滤器中删除元素**
 
 ### 什么是缓存击穿？有哪些解决办法？
 

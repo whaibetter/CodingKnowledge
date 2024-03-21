@@ -88,7 +88,6 @@ mysql> explain SELECT * FROM dept_emp WHERE emp_no IN (SELECT emp_no FROM dept_e
 - 改用其他实现方式：**ES、数仓**等
 - **数据碎片**处理
 
-## SQL优化场景（走索引）
+### SQL索引失效场景？
 
-1. 最左匹配
-2. 
+![img](http://42.192.130.83:9000/picgo/imgs/v2-a2489db52f7160dd85db9dfc62915220_720w.webp)

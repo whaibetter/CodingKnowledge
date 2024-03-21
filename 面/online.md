@@ -163,3 +163,61 @@ public class MybatisLanguageDriverAutoConfiguration {
 
 1. WebSocket
 2. HTTP，设计RestFul的协议，前端通过发送HTTP请求到这些路径来获取数据。后端可以使用常见的Web框架（如Spring MVC）来处理请求，并将数据以JSON、XML等格式返回给前端。
+
+### // TODO
+
+作者：牛客299461325号
+链接：[https://www.nowcoder.com/interview/center?entranceType=%E5%AF%BC%E8%88%AA%E6%A0%8F](https://www.nowcoder.com/interview/center?entranceType=导航栏)
+来源：牛客网
+
+#### 拷打项目，布隆过滤器的底层原理，如何控制长度。底层是如何控制长度的?如何控制误差?扩容因子是多少?
+
+#### 订单延迟取消队列是如何设计的。死信队列交换机。
+
+#### java集合，你了解的集合有哪些?
+
+#### synchronized的底层原理。和reentrantlock的区别
+
+#### java设计模式拷打。说说项目中用到了哪些设计模式。spring中哪些功能用到了模板设计模式。
+
+#### 如何实现mysql主从，Mysql主从如何设计调优。MVCC底层。当时想提项目用到了canal伪装成mysql的子节点来实现mysql和redis的最终一致性。过于紧张就忘了。
+
+#### 如果要实现一个LRU，如何实现?我提到可以直接继承LinkedHashMap.怎么实现的。我说各个方法分别super基础父类。继续深挖，问put的值值存储在哪?
+
+#### TCP的三次和四次。
+
+#### JVM 内存结构，垃圾回收。
+
+#### 操作系统的内存管理方式。
+
+
+
+手撕，第一题，二叉树的什么题读不懂。二叉树的ACM输入输出也不怎么会做。换第二题鸡兔同笼。写出来了之后，让讲讲
+
+
+
+### // TODO 
+
+有没有看过 ArrayList、HashMap、锁这些源码？ArrayList 的 add 方法进去后，第一步干嘛，第二步干嘛（答了 ArrayList 的扩容机制）
+
+ArrayList 扩容是怎么扩容的（答了 grow 方法）
+
+对HashMap的扩容有了解过吗？（不会，答的 HashMap的数据结构）
+
+对Lock锁这一块有了解吗？（答的 voliate 和 synchronized、乐观锁和悲观锁）
+
+Spring、SpringMVC、SpringBoot、Maybatis 开源框架中了解哪些？看过哪些源码？选一个回答（答的SpringIOC 创建流程）
+
+用了这么多技术栈了对哪个比较熟悉，像 Netty、Zookeeper、Redis、Kafka 这些，对哪一个的源码深入了解过？（不会，答了只会用）
+
+Netty 怎么解决粘包、拆包？（当时只想起来自定义协议）
+
+RPC 的自定义协议是怎么设计的？（这几天只着重准备第一个项目了，RPC都快忘光了。。。）
+
+序列化是怎么做的（因为JDK原生的性能差，用的开源框架 Kyro、Hession这些）
+
+
+
+作者：空白无上
+链接：https://www.nowcoder.com/discuss/596755269460209664?sourceSSR=dynamic
+来源：牛客网
