@@ -166,7 +166,7 @@ private SmsService smsService;
 
 ### ----Bean 的生命周期?
 
-![Spring Bean 生命周期](http://42.192.130.83:9000/picgo/imgs/b5d264565657a5395c2781081a7483e1.jpg)
+![e8a473640bcd06e544c86fa729133ac3.png](http://42.192.130.83:9000/picgo/imgs/e8a473640bcd06e544c86fa729133ac3.png)
 
 > [Spring bean生命周期的源码分析（超级详细）_springbean生命周期 luban-CSDN博客](https://blog.csdn.net/qq_40634846/article/details/106604539)
 >
@@ -174,25 +174,159 @@ private SmsService smsService;
 > 2. **实例化**（Instantiation） 反射创建BeanDefinition
 > 3. **依赖注入**
 > 4. **初始化**（Initialization）执行各种通知、前置后置方法
+>    - Aware装配各种信息、类加载器什么的
+>    - BeanPostProcesserBefore
+>    - InitialzingBean接口afterpropriters
+>    - BeanPostProcesserAfter
 > 5. **销毁**（Destruction）
->
-> ![在这里插入图片描述](http://42.192.130.83:9000/picgo/imgs/20210707225212729.png)
 >
 > 【史上最完整的Spring Bean的生命周期】https://www.bilibili.com/video/BV1584y1r7n6?vd_source=21aa5b1c385af63d5599b344a74f3ebe
 >
-> 1. 扫描所有类
-> 2. 找到要的类，并定义对应的BeanDefinition，放入Map
-> 3. 遍历Map生成对应的Bean
->    1. 构造对象 creatBeanInstance 反射 构造方法 @Autowired
->       - 根据参数在单例池中查找参数进行赋值
->    2. 填充属性 populateBean **三级缓存机制依赖注入**
->    3. 初始化实例 initializeBean 
->       - invokeAwareMethods
->       - invokeinitMethods
->    4. 注册销毁
-> 4. addSingleton
-> 5. close
->    - postProcessBeforeDestruction
+> ![e8a473640bcd06e544c86fa729133ac3.png](http://42.192.130.83:9000/picgo/imgs/e8a473640bcd06e544c86fa729133ac3.png)
+>
+> - org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#doCreateBean
+>
+> ```java
+> // AbstractAutowireCapableBeanFactory.java
+> protected Object doCreateBean(final String beanName, final RootBeanDefinition mbd, final @Nullable Object[] args)
+>     throws BeanCreationException {
+>  
+>     // 1. 实例化
+>     BeanWrapper instanceWrapper = null;
+>     if (instanceWrapper == null) {
+>         /** 这里会不断调用到 org.springframework.beans.factory.support.SimpleInstantiationStrategy#instantiate(org.springframework.beans.factory.support.RootBeanDefinition, java.lang.String, org.springframework.beans.factory.BeanFactory) 进行实例化，就是用构造方法反射创建对象
+>         */
+>         instanceWrapper = createBeanInstance(beanName, mbd, args);
+>     }
+>    
+>     Object exposedObject = bean;
+>     try {
+>         // 2. 属性赋值
+>         populateBean(beanName, mbd, instanceWrapper);
+>         // 3. 初始化 这里包含了Aware相关接口设置依赖、BeanPostProcesser前置处理、InitializingBean接口、init-method、BeanPostProcesser后置处理
+>         exposedObject = initializeBean(beanName, exposedObject, mbd);
+>     }
+>  
+>     // 4. 销毁-注册回调接口 包含DisposableBean接口实现、destory-method等
+>     try {
+>         registerDisposableBeanIfNecessary(beanName, bean, mbd);
+>     }
+>  
+>     return exposedObject;
+> }
+> ```
+>
+> ### 实例化
+>
+> ```java
+> public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner) {
+>    // Don't override the class with CGLIB if no overrides.
+>    if (!bd.hasMethodOverrides()) {
+>       Constructor<?> constructorToUse;
+>       synchronized (bd.constructorArgumentLock) {
+>          constructorToUse = (Constructor<?>) bd.resolvedConstructorOrFactoryMethod;
+>          if (constructorToUse == null) {
+>             Class<?> clazz = bd.getBeanClass();
+>             if (clazz.isInterface()) {
+>                throw new BeanInstantiationException(clazz, "Specified class is an interface");
+>             }
+>             try {
+>                constructorToUse = clazz.getDeclaredConstructor();
+>                bd.resolvedConstructorOrFactoryMethod = constructorToUse;
+>             }
+>             catch (Throwable ex) {
+>                throw new BeanInstantiationException(clazz, "No default constructor found", ex);
+>             }
+>          }
+>       }
+>       return BeanUtils.instantiateClass(constructorToUse);
+>    }
+>    else {
+>       // Must generate CGLIB subclass.
+>       return instantiateWithMethodInjection(bd, beanName, owner);
+>    }
+> }
+> ```
+>
+> ### 初始化initializeBean
+>
+> ```java
+> @SuppressWarnings("deprecation")
+> protected Object initializeBean(String beanName, Object bean, @Nullable RootBeanDefinition mbd) {
+>    invokeAwareMethods(beanName, bean);
+> 
+>    Object wrappedBean = bean;
+>    if (mbd == null || !mbd.isSynthetic()) {
+>       // 初始化1.  BeanPostProcessors的BeforeInitialization方法
+>       wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
+>    }
+> 
+>    try {
+>        // 这里面的逻辑是 ,即实现了InitializingBean接口并重写了afterPropertiesSet方法，就执行afterPropertiesSet
+>        /*
+>        boolean isInitializingBean = (bean instanceof InitializingBean);
+> 		if (isInitializingBean && (mbd == null || !mbd.hasAnyExternallyManagedInitMethod("afterPropertiesSet"))) {
+> 			if (logger.isTraceEnabled()) {
+> 				logger.trace("Invoking afterPropertiesSet() on bean with name '" + beanName + "'");
+> 			}
+> 			((InitializingBean) bean).afterPropertiesSet();
+> 		}
+>        */
+>       invokeInitMethods(beanName, wrappedBean, mbd);
+>    }
+>    catch (Throwable ex) {
+>       throw new BeanCreationException(
+>             (mbd != null ? mbd.getResourceDescription() : null), beanName, ex.getMessage(), ex);
+>    }
+>    if (mbd == null || !mbd.isSynthetic()) {
+>        // BeanPostProcessors的AfterInitialization方法
+>       wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
+>    }
+> 
+>    return wrappedBean;
+> }
+> ```
+>
+> #### Aware
+>
+> - 注入各种上下文信息
+>
+> ```java
+> /**
+>  * 调用实现了特定接口的bean的方法，以注入相应的上下文信息。
+>  * <p>此方法会检查给定的bean是否实现了以下接口，并根据实现调用相应的方法：</p>
+>  * <ul>
+>  *     <li>如果实现了BeanNameAware接口，会调用setBeanName方法设置bean名称；</li>
+>  *     <li>如果实现了BeanClassLoaderAware接口，会调用setBeanClassLoader方法设置bean的类加载器；</li>
+>  *     <li>如果实现了BeanFactoryAware接口，会调用setBeanFactory方法设置bean工厂。</li>
+>  * </ul>
+>  * @param beanName 要设置给bean的名称。
+>  * @param bean 要处理的bean对象。
+>  */
+> private void invokeAwareMethods(String beanName, Object bean) {
+>     // 如果bean实现了Aware接口，则进行下一步处理
+>     if (bean instanceof Aware) {
+>         // 如果bean实现了BeanNameAware接口，则设置bean名称
+>         if (bean instanceof BeanNameAware) {
+>             ((BeanNameAware)bean).setBeanName(beanName);
+>         }
+> 
+>         // 如果bean实现了BeanClassLoaderAware接口，则设置bean的类加载器
+>         if (bean instanceof BeanClassLoaderAware) {
+>             ClassLoader bcl = this.getBeanClassLoader(); // 获取bean的类加载器
+>             if (bcl != null) {
+>                 ((BeanClassLoaderAware)bean).setBeanClassLoader(bcl);
+>             }
+>         }
+> 
+>         // 如果bean实现了BeanFactoryAware接口，则设置bean工厂
+>         if (bean instanceof BeanFactoryAware) {
+>             ((BeanFactoryAware)bean).setBeanFactory(this);
+>         }
+>     }
+> 
+> }
+> ```
 >
 > ### demo
 >
@@ -811,7 +945,7 @@ com.whai.custom.MyServiceAutoConfiguration
   >   public class MyCustomEvent extends ApplicationEvent {
   >       // ...
   >   }
-  >     
+  >       
   >   // 监听器
   >   @Component
   >   public class MyCustomEventListener implements ApplicationListener<MyCustomEvent> {
@@ -820,13 +954,13 @@ com.whai.custom.MyServiceAutoConfiguration
   >           // 处理事件
   >       }
   >   }
-  >     
+  >       
   >   // 发布事件
   >   @Service
   >   public class MyEventPublisher {
   >       @Autowired
   >       private ApplicationEventPublisher eventPublisher;
-  >     
+  >       
   >       public void publishEvent() {
   >           // 发布事件
   >           eventPublisher.publishEvent(new MyCustomEvent(this));

@@ -446,86 +446,82 @@ ThreadLocal的作用是提供**线程内的==局部变量==**，这种变量在�
   }
 
 
-  class MyTask implements Runnable {
 
-      private static final ThreadLocal threadSession = new ThreadLocal();
-    
-      static int i = 0;
-    
-      public static MySession getSession() {
-          MySession o = (MySession)threadSession.get();
-          if (o == null) {
-              o = new MySession("" + i++);
-              threadSession.set(o);
-          }
-          return o;
+
+```java
+   class MyTask implements Runnable {
+ private static final ThreadLocal threadSession = new ThreadLocal();
+
+  static int i = 0;
+
+  public static MySession getSession() {
+      MySession o = (MySession)threadSession.get();
+      if (o == null) {
+          o = new MySession("" + i++);
+          threadSession.set(o);
       }
-    
-      public static void main(String[] args) {
-          new Thread(new Runnable() {
-              @Override
-              public void run() {
-                  MySession session = getSession();
-                  System.out.println(session.name);
-                  System.out.println("threadSession.get  "+threadSession.get());
-              }
-          }).start();
-          new Thread(new Runnable() {
-              @Override
-              public void run() {
-                  MySession session = getSession();
-                  System.out.println(session.name);
-                  System.out.println("threadSession.get  "+threadSession.get());
-              }
-          }).start();
-      }
+      return o;
   }
+
+  public static void main(String[] args) {
+      new Thread(new Runnable() {
+          @Override
+          public void run() {
+              MySession session = getSession();
+              System.out.println(session.name);
+              System.out.println("threadSession.get  "+threadSession.get());
+          }
+      }).start();
+      new Thread(new Runnable() {
+          @Override
+          public void run() {
+              MySession session = getSession();
+              System.out.println(session.name);
+              System.out.println("threadSession.get  "+threadSession.get());
+          }
+      }).start();
+  }
+    }
   // 0
   // threadSession.get  MySession{name='0'}
   // 1 线程有自己的变量区域
   // threadSession.get  MySession{name='1'}
-
-  ```
-
+```
 ##  wait()方法和notify()/notifyAll()方法在放弃对象监视器时有什么区别
 
-- wait会**放弃对象锁**。并等待唤醒
-- notify()/notifyAll()**不会放弃对象锁，只通知wait线程获取锁**，**必须等到synchronized方法或者语法块执行完才真正释放锁**
+-  wait会**放弃对象锁**。并等待唤醒
+-  notify()/notifyAll()**不会放弃对象锁，只通知wait线程获取锁**，**必须等到synchronized方法或者语法块执行完才真正释放锁**
 
-> - `wait()` 是唯一一个能够主动放弃对象监视器的方法。当一个线程调用 `wait()` 时，它会释放对象的监视器锁，使其他线程可以获取并修改对象的状态。
-> - `notify()` 和 `notifyAll()` 不会释放对象的监视器锁。它们只是唤醒在对象监视器上等待的线程。被唤醒的线程需要重新获取对象的监视器锁才能继续执行。
+- `wait()` 是唯一一个能够主动放弃对象监视器的方法。当一个线程调用 `wait()` 时，它会释放对象的监视器锁，使其他线程可以获取并修改对象的状态。
+- `notify()` 和 `notifyAll()` 不会释放对象的监视器锁。它们只是唤醒在对象监视器上等待的线程。被唤醒的线程需要重新获取对象的监视器锁才能继续执行。
 
 ```java
-public class Demo {
-    private static final Object lock = new Object();
-    private static int count = 0;
-
-    public static void main(String[] args) {
-        Thread t1 = new Thread(() -> {
-            synchronized (lock) {
-                while (count < 10) {
-                    System.out.println("Thread 1: " + count++);
-                    lock.notify();
-                }
-                lock.wait();
+    new Thread(() -> {
+        try {
+            synchronized (basicBean) {
+                System.out.println("wait");
+                basicBean.wait(); // 放弃锁
+                System.out.println(basicBean);
             }
-        });
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }).start();
 
-        Thread t2 = new Thread(() -> {
-            synchronized (lock) {
-                while (count < 20) {
-                    System.out.println("Thread 2: " + count++);
-                    lock.notify();
-                }
-                lock.wait();
+    new Thread(() -> {
+        synchronized (basicBean) {
+            System.out.println("notify");
+            basicBean.notify(); // wait放弃锁后 这里就能拿到锁
+            try {
+                Thread.sleep(10000); // notify并没有放弃锁，需要执行sleep结束后才能执行到上面的print
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-        });
 
-        t1.start();
-        t2.start();
-    }
+        }
+    }).start();
 }
-  ```
+```
 
 
 
@@ -644,10 +640,10 @@ public static void main(String[] args) {
     >   ```
     >   javaCopy codeimport java.util.concurrent.locks.Lock;
     >   import java.util.concurrent.locks.ReentrantLock;
-    >    
+    >        
     >   public class InterruptibleLockExample {
     >       private final Lock lock = new ReentrantLock();
-    >    
+    >        
     >       public void performTask() throws InterruptedException {
     >           lock.lockInterruptibly(); // 线程可以被中断
     >           try {
