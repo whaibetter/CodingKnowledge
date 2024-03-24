@@ -54,11 +54,46 @@
 
 - Callable.call + FutureTask
 
-- **线程池** 
-
   ```java
   // 提交 Callable 任务给线程池执行
   Future<String> future = executor.submit(new MyCallable());
+  ```
+
+- **线程池** 
+
+  ```java
+  public static void main(String[] args) {
+      /**
+       * 创建一个线程池执行器(ThreadPoolExecutor)实例。
+       * <p>此线程池的核心线程数为1，最大线程数为3，线程保持活动时间为0秒，即线程池不会保留空闲线程，
+       * 队列容量为2，超出队列容量的任务将使用默认线程工厂创建新线程处理，如果线程池已满，
+       * 并且无法处理新任务，则会抛出RejectedExecutionException异常。</p>
+       *
+       * @param corePoolSize 线程池的核心线程数，即一直存在的线程数。
+       * @param maximumPoolSize 线程池的最大线程数。
+       * @param keepAliveTime 空闲线程的存活时间，此处设置为0，表示不保留空闲线程。如果是60，闲置非核心线程超过60秒会被回收。
+       * @param unit 时间单位。
+       * @param workQueue 工作队列，用于存储等待执行的任务，此处使用ArrayBlockingQueue，容量为2。
+       * @param threadFactory 线程工厂，用于创建新线程。
+       * @param handler 拒绝执行策略，当线程池无法处理新任务时的处理策略，此处使用AbortPolicy，即抛出异常。
+       */
+      ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
+              1,
+              3,
+              0,
+              TimeUnit.SECONDS,
+              new ArrayBlockingQueue<>(2),
+              Executors.defaultThreadFactory(),
+              new ThreadPoolExecutor.AbortPolicy()
+      );
+      /**
+       * 当有任务提交到线程池时，线程池会创建一个核心线程来执行任务。由于核心线程数为1，所以只会创建一个线程。
+       * 如果任务队列未满，线程池会将任务添加到队列中等待执行。
+       * 如果队列已满且活动线程数小于最大线程数（3），线程池会创建额外的非核心线程来执行任务。这些非核心线程会在任务队列中的任务被消费后被销毁。
+       * 如果队列已满且活动线程数已达到最大线程数，而新的任务又提交到线程池，将会执行设置的拒绝策略 AbortPolicy。AbortPolicy 是默认的拒绝策略，它会抛出 RejectedExecutionException 异常来阻止任务的提交。
+       * 当任务开始执行时，线程池中的线程会按照任务队列的顺序消费任务进行执行。
+       */
+  }
   ```
 
 #### 线程池作用
