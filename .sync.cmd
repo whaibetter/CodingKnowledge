@@ -1,4 +1,3 @@
-
 @echo off
 
 setlocal enabledelayedexpansion
@@ -20,5 +19,8 @@ if "%changed_files%"=="" (
 
 :: 执行git commit
 git commit -m "%commit_message%"
+
+git push origin master
+git push gitea master
 
 endlocal
