@@ -21,5 +21,6 @@ if "%changed_files%"=="" (
 git commit -m "%commit_message%"
 git push origin master
 git push gitee master
+git push github master
 
 endlocal
