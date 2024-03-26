@@ -682,7 +682,7 @@ public class OOMTest extends ClassLoader{
 >
 > 运行时常量池是Java HotSpot虚拟机中的一个特殊数据结构，它是方法区的一部分。运行时常量池主要负责动态解析符号引用，将符号引用转换为直接引用。这个过程称为符号解析（Symbolic Resolution）和动态链接（Dynamic Linking）。通过运行时常量池，JVM可以在运行时解析类的元数据信息，从而提高了程序的运行效率和动态性。
 
-> #### demo
+> #### demo 
 >
 > ```java
 > public class SimpleClass {  
