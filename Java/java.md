@@ -1016,6 +1016,92 @@ public @interface Controller {
 
 1位 默认false
 
+## 浮点数加减丢失精度问题?
+
+#### 浮点数问题
+
+```java
+public static void main(String[] args) {
+    System.out.println(0.1 + 0.2);
+    System.out.println(0.2 - 0.1);
+    System.out.println(0.1 * 0.2);
+    System.out.println(0.2 / 0.1);
+    System.out.println(0.3 - 0.1);
+    System.out.println(0.3 / 0.1);
+}
+/**
+0.30000000000000004
+0.1
+0.020000000000000004
+2.0
+0.19999999999999998
+2.9999999999999996
+*/
+```
+
+计算机是二进制的。
+
+**浮点数没有办法是用二进制进行精确表示**。
+
+我们的CPU表示浮点数由两个部分组成：指数和尾数，这样的表示方法一般都会失去一定的精确度，有些浮点数运算也会产生一定的误差。
+
+double型0.1对于计算机来说并不是0.1，对于计算机来说它认为的0.1其实是0.1000000000000000055511151231257827021181583404541015625
+
+解决方法：
+
+**java.math.BigDecimal** 类来进行精确计算
+
+- BigDecimal类使用字符串表示十进制数
+
+- 精确的运算
+
+  - 转为long进行计算
+
+  > -123.22
+  >
+  > ![idea64_DfrfqVSMQZ](http://42.192.130.83:9000/picgo/imgs/idea64_DfrfqVSMQZ.png)
+  >
+  > 
+  >
+  > **scale（标度）**:对于数字123.45，标度为2 **小数后几位**
+  >
+  > **precision（精度）**：123.45，精度为5
+
+```java
+public class Main {
+   public static void main(String[] args) {
+    BigDecimal bd1 = new BigDecimal("0.1");
+    BigDecimal bd2 = new BigDecimal("0.2");
+    BigDecimal bd3 = new BigDecimal("0.3");
+	// 加法
+    BigDecimal result1 = bd1.add(bd2);
+    System.out.println(result1);
+
+    // 减法
+    BigDecimal result2 = bd2.subtract(bd1);
+    System.out.println(result2);
+
+    // 乘法
+    BigDecimal result3 = bd1.multiply(bd2);
+    System.out.println(result3);
+
+    // 除法
+    BigDecimal result4 = bd2.divide(bd1);
+    System.out.println(result4);
+
+    // 浮点数减法（0.3 - 0.1）
+    BigDecimal result5 = bd3.subtract(bd1);
+    System.out.println(result5);
+
+    // 浮点数除法（0.3 / 0.1）
+    BigDecimal result6 = bd3.divide(bd1);
+    System.out.println(result6);
+   }
+}
+```
+
+
+
 ## 为什么String不能被继承
 
 - 效率：内部不会被变化，高性能。

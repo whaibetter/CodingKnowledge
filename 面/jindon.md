@@ -77,9 +77,12 @@
 
 
 
-###  什么是内存泄露？
+###  什么是内存泄露？内存溢出？对应的场景有哪些？
 
 - **内存溢出**（Out Of Memory）：就是申请内存时，JVM 没有足够的内存空间。通俗说法就是去蹲坑发现坑位满了。
+  - 堆内存溢出：大对象、内存泄露
+  - 栈内存溢出：递归
+  - 方法区溢出：创建大量类、动态代理生成类
 - **内存泄露**（Memory Leak）：就是申请了内存，但是没有释放，导致内存空间浪费。通俗说法就是有人占着茅坑不拉屎。**无法释放不用的内存**
   - 对象引用无法及时释放
   - 资源没有close释放
@@ -212,8 +215,227 @@ if (conn != null) conn.close();`
 
 
 
-###  select 语句的执行顺序
+###  以下select 语句的执行顺序
+
+```sql
+SELECT DISTINCT t1.column1, t2.column2
+FROM table1 t1
+JOIN table2 t2 ON t1.id = t2.id
+WHERE t1.column3 = 'value'
+GROUP BY t1.column1, t2.column2
+HAVING COUNT(*) > 1
+ORDER BY t1.column1
+LIMIT 10;
+```
+
+1. from on join
+2. where
+3. groub by
+4. having
+5. **select DISTINCT**
+6. orderby
+7. top limit
+
+
+
 ###  Spring 事务怎么实现的
+
+> Spring事务有两种：
+>
+> ### 声明式事务
+>
+> 1. 在 Bean 初始化阶段**创建代理对象**，获取属性切面 `@Transactional` 注解及其属性值
+> 2. 通过代理调用，触发AOP拦截；`TransactionInterceptor extend  MethodInterceptor` ，调用父类`invokeWithinTransaction`方法进行开启事务、事务提交、异常回滚等。
+>
+> ### 编程式事务
+>
+> 使用 TransactionTemplate 、PlatformTransactionManager 显式声明事务，手动提交、回滚。
+
+声明式事务管理
+
+> 声明式事务是建立在 **AOP** 之上的。
+>
+> 通过 AOP 功能，对方法前后进行拦截，将事务处理的功能编织到拦截的方法中，也就是在**目标方法开始之前启动一个事务**，**在目标方法执行完之后根据执行情况提交或者回滚事务**。
+>
+> 1. **在 Bean 初始化阶段创建代理对象**：初始化单例 Bean 的时候，会遍历所有的 BeanPostProcessor 实现类，并执行其 postProcessAfterInitialization 方法。**获取事务的属性切面 `@Transactional` 注解及其属性值**。
+>
+>    根据得到的切面创建一个代理对象JDK or Cglib
+>
+> 2. 通过**代理对象调用 Bean 方法**的时候，会触发对应的 AOP 增强拦截
+>
+>    声明式事务是一种环绕增强，对应接口为`MethodInterceptor`，事务增强对该接口的实现为`TransactionInterceptor`
+>
+> 
+>
+> 声明式事务管理最细粒度只能作用到方法级别
+>
+> ```java
+> org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#applyBeanPostProcessorsAfterInitialization
+> @Deprecated(since = "6.1")
+> @Override
+> public Object applyBeanPostProcessorsAfterInitialization(Object existingBean, String beanName)
+>       throws BeansException {
+> 
+>    Object result = existingBean;
+>    for (BeanPostProcessor processor : getBeanPostProcessors()) {
+>       Object current = processor.postProcessAfterInitialization(result, beanName);
+>       if (current == null) {
+>          return result;
+>       }
+>       result = current;
+>    }
+>    return result;
+> }
+> 
+> org.springframework.transaction.interceptor.AbstractFallbackTransactionAttributeSource#computeTransactionAttribute
+> @Nullable
+> protected TransactionAttribute computeTransactionAttribute(Method method, @Nullable Class<?> targetClass) {
+>    // Don't allow non-public methods, as configured.
+>    if (allowPublicMethodsOnly() && !Modifier.isPublic(method.getModifiers())) {
+>       return null;
+>    }
+> 
+>    // The method may be on an interface, but we need attributes from the target class.
+>    // If the target class is null, the method will be unchanged.
+>    Method specificMethod = AopUtils.getMostSpecificMethod(method, targetClass);
+> 
+>    // First try is the method in the target class.
+>    TransactionAttribute txAttr = findTransactionAttribute(specificMethod);
+>    if (txAttr != null) {
+>       return txAttr;
+>    }
+> ```
+>
+> 默认使用 JDK 动态代理创建代理，如果目标类是接口，则使用 JDK 动态代理，否则使用 Cglib
+>
+> ### 事务拦截器
+>
+> ```java
+> /**
+>  * 调用目标方法时的拦截处理。
+>  * <p>此方法主要负责在交易环境中调用目标方法。它首先确定目标类，然后通过
+>  * {@code invokeWithinTransaction} 方法在事务环境中执行实际的方法调用。
+>  *
+>  * @param invocation 方法调用的详细信息，包括调用的方法、目标对象等。
+>  * @return 方法的返回值，可能会是任何类型。
+>  * @throws Throwable 如果在方法执行过程中发生异常。
+>  */
+> @Override
+> @Nullable
+> public Object invoke(MethodInvocation invocation) throws Throwable {
+> 	// 确定目标类，如果目标对象不为空，则获取其真实类，否则为null。
+> 	// 这个信息对于确定事务属性是必要的。
+> 	Class<?> targetClass = (invocation.getThis() != null ? AopUtils.getTargetClass(invocation.getThis()) : null);
+> 
+> 	// 在事务环境中调用目标方法 包括开启事务、事务提交、异常回滚
+> 	return invokeWithinTransaction(invocation.getMethod(), targetClass, new CoroutinesInvocationCallback() {
+> 		@Override
+> 		@Nullable
+> 		public Object proceedWithInvocation() throws Throwable {
+> 			// 执行实际的方法调用
+> 			return invocation.proceed();
+> 		}
+> 		@Override
+> 		public Object getTarget() {
+> 			// 获取目标对象
+> 			return invocation.getThis();
+> 		}
+> 		@Override
+> 		public Object[] getArguments() {
+> 			// 获取方法参数数组
+> 			return invocation.getArguments();
+> 		}
+> 	});
+> }
+> ```
+
+- @Transactional
+
+> Spring 框架中，事务管理相关最重要的 3 个接口如下：
+>
+> - **`PlatformTransactionManager`**：（平台）事务**管理器**，Spring 事务策略的核心。
+> - 描述：
+>   - **`TransactionDefinition`**：事务定义信息(事务隔离级别、传播行为、超时、只读、回滚规则)。
+>   - **`TransactionStatus`**：事务运行状态。
+>
+> ------
+>
+> - 隔离级别
+> - 传播行为
+> - 回滚规则
+> - 是否只读
+> - 事务超时
+
+编程式事务管理
+
+- TransactionTemplate 
+- PlatformTransactionManager 
+
+```java
+@Autowired
+private TransactionTemplate transactionTemplate;
+public void testTransaction() {
+
+        transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+
+                try {
+
+                    // ....  业务代码
+                } catch (Exception e){
+                    //回滚
+                    transactionStatus.setRollbackOnly();
+                }
+
+            }
+        });
+}
+```
+
+```java
+@Autowired
+private PlatformTransactionManager transactionManager;
+
+public void testTransaction() {
+
+  TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+          try {
+               // ....  业务代码
+              transactionManager.commit(status);
+          } catch (Exception e) {
+              transactionManager.rollback(status);
+          }
+}
+```
+
+
+
 ###  事务的传播机制
+
+7种传播机制
+
+【外部事务，内部事务】
+
+1. Required 没有事务创建、**有事务就加入** 
+2. Support 只**支持**当前事务，没有就不事务 
+3. Mandatory  **强制**当前事务，没有就报错
+4. Required_new 新建事务，存在的事务会挂起
+5. Not_Supported 不支持事务，有事务会异常
+6. Nested 嵌套一个子事务
+
+![image-20240325122709601](http://42.192.130.83:9000/picgo/imgs/image-20240325122709601.png)
+
 ###  查询和更新都频繁的字段是否适合创建索引，为什么
-###  联合索引 abc，a=1,c=1/b=1,c=1/a=1,c=1,b=1走不走索引
+
+索引提供了快速查找的方式，数据访问的时间复杂度从O(n)降低到了O(log n)。
+
+但修改数据同时要修改索引，导致B+树的分裂、旋转
+
+### 联合索引 abc，a=1,c=1/b=1,c=1/a=1,c=1,b=1走不走索引
+
+half 表明 a=1,c=1 会使用联合索引。但因为缺少了 B 字段的条件
+
+false  不会使用联合索引
+
+true

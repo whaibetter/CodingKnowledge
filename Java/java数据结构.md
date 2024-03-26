@@ -15,9 +15,11 @@ Iterator：迭代器，可以通过迭代器遍历集合中的数据
 
 ## fail-fast机制是什么？
 
-- 遍历过程中进行了修改（增加、删除），则会抛出**Concurrent Modification Exception**（并发修改异常）
+- Iterator迭代过程中进行了修改（增加、删除），则会抛出**Concurrent Modification Exception**（并发修改异常）
 
-例如，在使用 `Iterator` 迭代器遍历集合时，如果在遍历的过程中直接调用了集合的 `add()`、`remove()` 等方法来修改集合的结构，而不是通过迭代器提供的 `remove()` 方法，就有可能抛出 `ConcurrentModificationException` 异常。
+例如，**在使用 `Iterator` 迭代器遍历集合时，如果在遍历的过程中直接调用了集合的 `add()`、`remove()` 等方法来修改集合的结构，而不是通过迭代器提供的 `remove()` 方法**，就有可能抛出 `ConcurrentModificationException` 异常。
+
+单线程环境下也可能触发Fail-fast机制。例如，当使用foreach遍历集合时，如果同时对该集合进行结构性修改（如添加或删除元素），就会抛出ConcurrentModificationException异常。这是因为foreach遍历实际上是通过迭代器实现的，而迭代器在遍历过程中会检查集合的结构是否发生了变化。如果检测到变化，就会抛出异常。
 
 ```java
 当不允许对对象进行并发修改时，检测到对象并发修改的方法可能会引发此异常。
