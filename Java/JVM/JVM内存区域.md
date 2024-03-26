@@ -684,8 +684,6 @@ public class OOMTest extends ClassLoader{
 
 > #### demo
 >
-> 
->
 > ```java
 > public class SimpleClass {  
 >     public static final String CONSTANT_STRING = "Hello, World!";   // CONSTANT_STRING 是一个字符串常量，它会在编译期间被放入常量池中 System.out、println等方法和类引用也会被作为符号引用放入常量池
