@@ -19,8 +19,11 @@ if "%changed_files%"=="" (
 
 :: 执行git commit
 git commit -m "%commit_message%"
+echo "git push origin master"
 git push origin master
+echo "git push gitee master"
 git push gitee master
+echo "git push github master"
 git push github master
 
 endlocal
