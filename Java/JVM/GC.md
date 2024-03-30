@@ -294,14 +294,24 @@ public void localvarGc5() {
 >        单例的生命周期和应用程序是一样长的，所以单例程序中，如果**持有对外部对象的引用**的话，那么这个外部对象是不能被回收的，则会导致内存泄漏的产生。
 >
 >        ```java
->        public class Runtime { //单例
->            private static Runtime currentRuntime = new Runtime();
+>        public class MemoryLeak {
+>            static List list = new ArrayList();
+>            public void oomTests(){
+>                Object obj＝new Object();//局部变量，因为list是单例，所以obj不能回收
+>                list.add(obj);
+>            }
+>            public static void clearList() {
+>                list.clear(); // 清理后
+>            }
+>        }
+>        
+>        // 由于 list 是一个静态成员变量，其生命周期与应用程序的生命周期相同，因此 list 中的对象也会持续存在，直到 list 被显式地清空或程序结束。
 >        ```
->
+>     
 >     2. 一些提供 **close 的资源未关闭**导致内存泄漏
->
+>     
 >        数据库连接（dataSourse.getConnection() ），网络连接（socket）和 io 连接必须**手动 close**，否则是不能被回收的。
->
+>     
 >     3. 引用计数算法也会内存泄露，但jvm没有采用
 >
 > ![右边这里有个指针无法断开，比如忘记close资源](http://42.192.130.83:9000/picgo/imgs/68967cdd14772a749efdb7485950aaa6.png)
