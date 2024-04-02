@@ -616,6 +616,8 @@ class ProxyUtils {
 >
 > ### 优缺点
 >
+> CGLIB 会动态创建一个**目标类的子类**，并**重写目标类的方法**实现来实现代理逻辑。
+>
 > 1. **可以代理接口和类，而java.lang.reflect.Proxy只能代理接口。**
 >
 > 2. java.lang.reflect.Proxy是基于接口的代理，而CGLIB是基于类的代理。这意味着，当你为一个类创建代理时，该类的方法都会被拦截。
@@ -640,52 +642,69 @@ JDK 动态代理有一个最致命的问题是其只能代理实现了接口的�
 - **使用MethodInterceptor+Enhancer 实现代理**
 
 ```java
-public interface MethodInterceptor extends Callback{
-    // 拦截被代理类中的方法
-    public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args,MethodProxy proxy) throws Throwable;
+public class cglib {
+
+    public static void main(String[] args) {
+        // 创建目标类的代理
+        TargetClassProxy proxy = new TargetClassProxy();
+
+        // 使用CGLIB创建代理对象
+        Enhancer enhancer = new Enhancer();
+        enhancer.setSuperclass(TargetClass.class);
+        enhancer.setCallback(proxy);
+
+        TargetClass targetProxy = (TargetClass) enhancer.create(); // Enhancer创建子类代理
+
+        // 调用代理对象的方法
+        targetProxy.doSomething();
+        System.out.println("===================");
+        targetProxy.doA();
+    }
 }
 ```
 
 ```java
-
-class MyService {
-
-    public static void main(String[] args) {
-        MyService proxy = (MyService) ProxyUtils.getProxy(MyService.class);
-        proxy.sayHello();
-    }
-
-    public void sayHello() {
-        System.out.println("Hello");
+class TargetClass extends TargetA{
+    public void doSomething() {
+        System.out.println("TargetClass: doSomething()");
     }
 }
 
-class DebugMethodInterceptor implements MethodInterceptor {
+class TargetA{
+    /**
+     *  加了final后，Enhancer不会增强
+     * <h4>
+     * Before method: doSomething <br>
+     * TargetClass: doSomething()<br>
+     * After method: doSomething<br>
+     * ===================<br>
+     * TargetA: doA()<br>
+     * </h4>
+     *
+     * 不加final
+     * <h4>
+     *     Before method: doSomething<br>
+     * TargetClass: doSomething()<br>
+     * After method: doSomething<br>
+     * ===================<br>
+     * Before method: doA<br>
+     * TargetA: doA()<br>
+     * After method: doA<br>
+     * </h4>
+     */
+    public void doA(){
 
-    public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
-        //调用方法之前，我们可以添加自己的操作
-        System.out.println("before method " + method.getName());
-        Object object = methodProxy.invokeSuper(o, objects);
-        //调用方法之后，我们同样可以添加自己的操作
-        System.out.println("after method " + method.getName());
-
-        return object;
+        System.out.println("TargetA: doA()");
     }
 }
 
-class ProxyUtils {
-
-    public static Object getProxy(Class clazz) {
-        // 创建动态代理增强类
-        Enhancer enhancer = new Enhancer();
-        // 设置类加载器
-        enhancer.setClassLoader(clazz.getClassLoader());
-        // 设置被代理类
-        enhancer.setSuperclass(clazz);
-        // 设置方法拦截器
-        enhancer.setCallback(new DebugMethodInterceptor());
-        // 创建代理类
-        return enhancer.create();
+class TargetClassProxy implements MethodInterceptor {
+    @Override
+    public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args, MethodProxy proxy) throws Throwable {
+        System.out.println("Before method: " + method.getName());
+        Object result = proxy.invokeSuper(obj, args); // 调用目标类的原始方法
+        System.out.println("After method: " + method.getName());
+        return result;
     }
 }
 ```
