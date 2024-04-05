@@ -584,12 +584,20 @@ Spring AOP 就是基于动态代理的
 
 ### Spring AOP 和 AspectJ AOP 有什么区别？
 
-- **Spring AOP 属于==运行时==增强，而 AspectJ 是==编译时==增强。** 
-  - **应用场景不同**：Spring AOP的实现都是在运行时进行织入的，而且只能针对方法进行AOP，无法针对构造函数、字段进行AOP。而AspectJ可以在编译成class时就织入，还提供了后编译器织入和类加载期织入。
+AspectJ是在**运行前织入**的
+
+而Spring AOP是**运行时织入**（编译时增强）的，主要使用了两种技术：JDK动态代理和CGLIB代理。对于接口使用JDK Proxy，而继承的使用CGLIB。
+
+**效率：** 编译织入会比较运行时织入快很多，Spring AOP是使用代理模式在运行时才创建对应的代理类，效率没有AspectJ高。
+
+- **Spring AOP 属于==运行时==增强，而 AspectJ 增加了==编译时==增强。** 
+  - **应用场景不同**：Spring AOP的实现都是在运行时进行织入的，而且只能针对方法进行AOP，无法针对构造函数、字段进行AOP。而AspectJ增加了编译成class时就织入，还提供了后编译器织入和类加载期织入。
 
 - Spring AOP 基于代理(Proxying)，而 AspectJ 基于字节码操作(Bytecode Manipulation)。
 
 当切面太多的话，最好选择 AspectJ ，它比 Spring AOP 快很多。
+
+**编译时增强的主要优势是在运行时性能方面更加高效。由于切面逻辑已经在编译阶段被织入到了目标代码中，不需要在运行时创建代理对象或拦截方法调用，因此可以直接执行增强后的目标代码，减少了额外的开销和性能损耗。**
 
 ### AspectJ 定义的通知类型有哪些？
 
@@ -945,7 +953,7 @@ com.whai.custom.MyServiceAutoConfiguration
   >   public class MyCustomEvent extends ApplicationEvent {
   >       // ...
   >   }
-  >       
+  >         
   >   // 监听器
   >   @Component
   >   public class MyCustomEventListener implements ApplicationListener<MyCustomEvent> {
@@ -954,13 +962,13 @@ com.whai.custom.MyServiceAutoConfiguration
   >           // 处理事件
   >       }
   >   }
-  >       
+  >         
   >   // 发布事件
   >   @Service
   >   public class MyEventPublisher {
   >       @Autowired
   >       private ApplicationEventPublisher eventPublisher;
-  >       
+  >         
   >       public void publishEvent() {
   >           // 发布事件
   >           eventPublisher.publishEvent(new MyCustomEvent(this));

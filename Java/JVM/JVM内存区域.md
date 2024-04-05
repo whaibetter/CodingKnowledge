@@ -665,7 +665,21 @@ public class OOMTest extends ClassLoader{
 ### 如何解决OOM？
 
 > 1. 导出dump快照，使用Memory Analyzer Tool、JProfiler 分析**内存泄露**（栈指向堆，但没被使用，迟迟不能被GC）还是**溢出**。 `-XX:HeapDumpPath=<path> 指定heap转储文件的存储路径，默认当前目录`
+>
+>    ```shell
+>    jmap -dump:format=b,file=<文件路径> <进程ID>
+>    jcmd <进程ID> GC.heap_dump <文件路径>
+>    ```
+>
+>    ```java
+>    String fileName = "<文件路径>";
+>    HotSpotDiagnosticMXBean bean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
+>    bean.dumpHeap(fileName, true);
+>    System.out.println("Memory dump saved to: " + fileName);
+>    ```
+>
 > 2. 如果是内存泄漏，可进一步通过工具查看泄漏对象到 GC Roots 的引用链。
+>
 > 3. 检查虚拟机的堆参数（`-Xmx`与`-Xms`）
 
 ### 运行时常量池 VS 常量池
