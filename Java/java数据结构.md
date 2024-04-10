@@ -588,3 +588,58 @@ public class Hashtable<K,V>
 > 1. 内存占用，每次copy
 > 2. 写开销，同上
 > 3. 数据一致性：写操作不会立刻生效
+
+## modCount的作用？
+
+ArrayList,LinkedList,HashMap等等的内部实现增，删，改中我们总能看到modCount的身影，modCount字面意思就是修改次数，但为什么要记录modCount的修改次数呢？
+
+只有在**本数据结构对应迭代器**中才使用。**检查哈希表是否在遍历过程中被修改，被修改就抛出ConcurrentModificationException**
+
+- 以HashMap为例
+
+```java
+/**
+此 HashMap 在结构上被修改的次数 结构修改是那些更改 HashMap 中的映射数量或以其他方式修改其内部结构（例如，重新散列）的修改。此字段用于使 HashMap 的 Collection-views 上的迭代器快速失败。（请参阅 ConcurrentModificationException）。
+*/
+transient int modCount;
+```
+
+```java
+abstract class HashIterator {
+    Node<K,V> next;        // next entry to return
+    Node<K,V> current;     // current entry
+    int expectedModCount;  // for fast-fail
+    int index;             // current slot
+
+
+    final Node<K,V> nextNode() {
+        Node<K,V>[] t;
+        Node<K,V> e = next;
+        // 检查哈希表是否在遍历过程中被修改。
+        // 判断 modCount 跟 expectedModCount 是否相等，如果不相等就表示已经有其他线程修改了 
+        if (modCount != expectedModCount)
+            throw new ConcurrentModificationException();
+        if (e == null)
+            throw new NoSuchElementException();
+        if ((next = (current = e).next) == null && (t = table) != null) {
+            do {} while (index < t.length && (next = t[index++]) == null);
+        }
+        return e;
+    }
+
+    public final void remove() {
+        Node<K,V> p = current;
+        if (p == null)
+            throw new IllegalStateException();
+        if (modCount != expectedModCount)
+            throw new ConcurrentModificationException();
+        current = null;
+        removeNode(p.hash, p.key, null, false, false);
+        expectedModCount = modCount;
+    }
+}
+```
+
+### 为什么HashMap使用红黑树不使平衡树？
+
+红黑树作为一种自平衡二叉搜索树，具有较好的平衡性能，保证了在最坏情况下的查找、插入和删除操作的时间复杂度为 O(log N)。相比之下，**平衡树（如 AVL 树）虽然也具有良好的平衡性能，但在插入和删除操作时可能需要更多的旋转操作，导致性能的略微下降**。

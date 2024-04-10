@@ -149,6 +149,8 @@ volatile修饰的变量有可见性，一旦某个线程修改了这样的变量
 > 如果先赋值了instance变量，那么b线程`if (singleton == null)`为false，但==线程B使用了一个**没有被初始化的对象引用**==
 >
 > - **使用volatile就能避免重排序**
+>
+> 线程 T1 执行了 **1 分配空间**和 **3引用**，此时 T2 调用 `getInstance`() 后发现 `uniqueInstance` 不为空，因此返回 `uniqueInstance`，但此时 `uniqueInstance` 还未被初始化（**T2获取到未被初始化的对象**）。
 
 ```java
 /**
@@ -640,10 +642,10 @@ public static void main(String[] args) {
     >   ```
     >   javaCopy codeimport java.util.concurrent.locks.Lock;
     >   import java.util.concurrent.locks.ReentrantLock;
-    >        
+    >          
     >   public class InterruptibleLockExample {
     >       private final Lock lock = new ReentrantLock();
-    >        
+    >          
     >       public void performTask() throws InterruptedException {
     >           lock.lockInterruptibly(); // 线程可以被中断
     >           try {
