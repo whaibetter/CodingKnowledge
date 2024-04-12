@@ -448,47 +448,114 @@ ThreadLocal的作用是提供**线程内的==局部变量==**，这种变量在�
   }
 
 
+```java
+public class ThreadLocalExample {
+    
+    public static void main(String[] args) throws InterruptedException {
+        for(int i=0 ; i<3; i++){
+            new Thread(new MyThread()).start();
+        }
+    }
+}
 
+class MyThread  implements Runnable{
+
+    private static ThreadLocal<Integer> localVariable = new ThreadLocal<Integer>() {
+        @Override
+        protected Integer initialValue() {
+            return 100;
+        }
+    };
+
+    @Override
+    public void run() {
+        System.out.println("Thread Name= " + Thread.currentThread().getName() + " default value = " + localVariable.get());
+        //formatter pattern is changed here by thread, but it won't reflect to other threads
+        localVariable.set(localVariable.get() + 1);
+
+        System.out.println("Thread Name= " + Thread.currentThread().getName() + " localVariable = " + localVariable.get());
+
+    }
+}
+Thread Name= Thread-0 default value = 100
+Thread Name= Thread-1 default value = 100
+Thread Name= Thread-0 localVariable = 101
+Thread Name= Thread-1 localVariable = 101
+Thread Name= Thread-2 default value = 100
+Thread Name= Thread-2 localVariable = 101
+```
+## [ThreadLocal 原理了解吗？](https://javaguide.cn/java/concurrent/java-concurrent-questions-03.html#threadlocal-原理了解吗)
+
+`Thread` 类中有一个 `threadLocals` 和 一个 `inheritableThreadLocals` 变量。
 
 ```java
-   class MyTask implements Runnable {
- private static final ThreadLocal threadSession = new ThreadLocal();
+public class Thread implements Runnable {
+    //......
+    //与此线程有关的ThreadLocal值。由ThreadLocal类维护 存储线程本地变量的值
+    ThreadLocal.ThreadLocalMap threadLocals = null;
 
-  static int i = 0;
+    //与此线程有关的InheritableThreadLocal值。由InheritableThreadLocal类维护  存储可继承的线程本地变量的值。
+    ThreadLocal.ThreadLocalMap inheritableThreadLocals = null;
+    //......
+}
 
-  public static MySession getSession() {
-      MySession o = (MySession)threadSession.get();
-      if (o == null) {
-          o = new MySession("" + i++);
-          threadSession.set(o);
-      }
-      return o;
-  }
-
-  public static void main(String[] args) {
-      new Thread(new Runnable() {
-          @Override
-          public void run() {
-              MySession session = getSession();
-              System.out.println(session.name);
-              System.out.println("threadSession.get  "+threadSession.get());
-          }
-      }).start();
-      new Thread(new Runnable() {
-          @Override
-          public void run() {
-              MySession session = getSession();
-              System.out.println(session.name);
-              System.out.println("threadSession.get  "+threadSession.get());
-          }
-      }).start();
-  }
-    }
-  // 0
-  // threadSession.get  MySession{name='0'}
-  // 1 线程有自己的变量区域
-  // threadSession.get  MySession{name='1'}
 ```
+
+- ThreadLocal.**set和get** 一旦没有threadLocals就创建
+
+```java
+public void set(T value) {
+    //获取当前请求的线程
+    Thread t = Thread.currentThread();
+    //取出 Thread 类内部的 threadLocals 变量(哈希表结构)
+    ThreadLocalMap map = getMap(t);
+    if (map != null)
+        // 将需要存储的值放入到这个哈希表中
+        map.set(this, value);
+    else
+        createMap(t, value);
+}
+ThreadLocalMap getMap(Thread t) {
+    return t.threadLocals;
+}
+```
+
+![ThreadLocal内部类](http://42.192.130.83:9000/picgo/imgs/thread-local-inner-class.png)
+
+![ThreadLocal 数据结构](http://42.192.130.83:9000/picgo/imgs/threadlocal-data-structure.png)!
+
+```java
+static class ThreadLocalMap {
+    private Entry[] table;
+    static class Entry extends WeakReference<ThreadLocal<?>> {
+        /** 弱引用  */
+        Object value;
+
+        // ThreadLocal 为key
+        Entry(ThreadLocal<?> k, Object v) {
+            super(k);
+            value = v;
+        }
+    }
+```
+
+## [ThreadLocal 内存泄露问题是怎么导致的？](https://javaguide.cn/java/concurrent/java-concurrent-questions-03.html#threadlocal-内存泄露问题是怎么导致的)
+
+`ThreadLocalMap` 
+
+-  key 为 `ThreadLocal` 的弱引用。**下一次GC就会回收**
+-  value 是强引用。**相对难被回收**
+
+这样一来，`ThreadLocalMap` 中就**会出现 key 为 null 的 Entry（内存泄露，不会被回收）**。
+
+`ThreadLocalMap` 实现中已经考虑了这种情况，在调用 `set()`、`get()`、`remove()` 方法的时候，会清理掉 key 为 null 的记录。使用完 `ThreadLocal`方法后最好手动调用`remove()`方法
+
+
+
+![ThreadLocal 数据结构](http://42.192.130.83:9000/picgo/imgs/threadlocal-data-structure.png)
+
+
+
 ##  wait()方法和notify()/notifyAll()方法在放弃对象监视器时有什么区别
 
 -  wait会**放弃对象锁**。并等待唤醒
@@ -642,10 +709,10 @@ public static void main(String[] args) {
     >   ```
     >   javaCopy codeimport java.util.concurrent.locks.Lock;
     >   import java.util.concurrent.locks.ReentrantLock;
-    >          
+    >            
     >   public class InterruptibleLockExample {
     >       private final Lock lock = new ReentrantLock();
-    >          
+    >            
     >       public void performTask() throws InterruptedException {
     >           lock.lockInterruptibly(); // 线程可以被中断
     >           try {
