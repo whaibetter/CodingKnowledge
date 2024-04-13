@@ -709,10 +709,10 @@ public static void main(String[] args) {
     >   ```
     >   javaCopy codeimport java.util.concurrent.locks.Lock;
     >   import java.util.concurrent.locks.ReentrantLock;
-    >            
+    >              
     >   public class InterruptibleLockExample {
     >       private final Lock lock = new ReentrantLock();
-    >            
+    >              
     >       public void performTask() throws InterruptedException {
     >           lock.lockInterruptibly(); // 线程可以被中断
     >           try {
@@ -957,4 +957,147 @@ new Thread(() -> {
 ## 同步方法和同步块，哪个是更好的
 
 - 范围越小效率越高，所以**同步块效率更高**，锁住整个对象和锁住一部分。
+
+## 使用两个线程交替打印ab100次？3个线程交替打印abc？
+
+> #### 使用syncronized锁定+count奇偶性计数
+>
+> - 线程1在0（偶数）时进行wait，此时0（偶数）不会让线程2进入wait，让线程2执行完后++再notify，此时线程1的wait继续执行
+>
+> **奇数偶数分别由不同线程进行等待**
+>
+> **如果是三个线程，需要保证count属于本线程的时候才wait**
+>
+> ```java
+> // 判断是否轮到自己执行
+> while (count % 3 != 0) {
+>     // 不是则等待
+>     lock.wait();
+> }
+> ```
+>
+> #### 使用2个Semaphore信号量，进行锁定释放
+>
+> - 使用2个Semaphore，执行前加锁，执行完解锁
+
+```java
+private static Object lock = new Object();
+private static Integer count = 0;
+/**
+ * 主函数示例，演示了通过两个线程交替打印字符并控制其执行顺序的简单并发程序。
+ * 使用一个共享计数器和一个对象锁来协调两个线程的执行。
+ * 线程1打印字符'a'，线程2打印字符'b'，交替进行，直到计数器达到100。
+ *
+ * @param args 命令行参数（未使用）
+ * @throws InterruptedException 如果线程在等待时被中断则抛出此异常
+ */
+public static void main1(String[] args) throws InterruptedException{
+
+// 创建三个线程
+        Thread threadA = new Thread(() -> {
+            try {
+                // 循环100次
+                for (int i = 0; i < 100; i++) {
+                    // 获取锁
+                    synchronized (lock) {
+                        // 判断是否轮到自己执行
+                        while (count % 3 != 0) {
+                            // 不是则等待
+                            lock.wait();
+                        }
+                        // 打印字母
+                        System.out.println("A");
+                        // 修改状态
+                        count++;
+                        // 唤醒下一个线程
+                        lock.notifyAll();
+                    }
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+
+        Thread threadB = new Thread(() -> {
+            try {
+                for (int i = 0; i < 100; i++) {
+                    synchronized (lock) {
+                        while (count % 3 != 1) {
+                            lock.wait();
+                        }
+                        System.out.println("B");
+                        count++;
+                        lock.notifyAll();
+                    }
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+
+        Thread threadC = new Thread(() -> {
+            try {
+                for (int i = 0; i < 100; i++) {
+                    synchronized (lock) {
+                        // 确保严格到本线程打的时候再等候
+                        while (count % 3 != 2) {
+                            lock.wait();
+                        }
+                        System.out.println("C");
+                        count++;
+                        lock.notifyAll();
+                    }
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+
+        // 启动三个线程
+        threadA.start();
+        threadB.start();
+        threadC.start();
+
+}
+```
+
+```java
+private static final Semaphore semaphoreA = new Semaphore(1); // 初始化为1，表示开始时允许线程1（打印'a'）执行
+private static final Semaphore semaphoreB = new Semaphore(0); // 初始化为0，表示开始时阻止线程2（打印'b'）执行
+public static void main(String[] args) throws InterruptedException {
+
+    new Thread(
+            () -> {
+                for (int i = 0; i < 50; i++) {
+                    try {
+                        semaphoreA.acquire();
+                        System.out.println("a");
+                        semaphoreB.release();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+    ).start();
+
+
+    new Thread(
+            () -> {
+                for (int i = 0; i < 50; i++) {
+                    try {
+                        semaphoreB.acquire();
+                        System.out.println("b");
+                        semaphoreA.release();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+    ).start();
+}
+```
+
+
+
+ l
 
