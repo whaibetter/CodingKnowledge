@@ -539,28 +539,6 @@ static class ThreadLocalMap {
     }
 ```
 
-```java
-class MyThread  implements Runnable{
-
-    private static ThreadLocal<Integer> localVariable = new ThreadLocal<Integer>() {
-        @Override
-        protected Integer initialValue() {
-            return 100;
-        }
-    };
-
-    @Override
-    public void run() {
-        System.out.println("Thread Name= " + Thread.currentThread().getName() + " default value = " + localVariable.get());
-        //formatter pattern is changed here by thread, but it won't reflect to other threads
-        localVariable.set(localVariable.get() + 1);
-
-        System.out.println("Thread Name= " + Thread.currentThread().getName() + " localVariable = " + localVariable.get());
-
-    }
-}
-```
-
 ## [ThreadLocal 内存泄露问题是怎么导致的？](https://javaguide.cn/java/concurrent/java-concurrent-questions-03.html#threadlocal-内存泄露问题是怎么导致的)
 
 `ThreadLocalMap` 
@@ -571,6 +549,8 @@ class MyThread  implements Runnable{
 这样一来，`ThreadLocalMap` 中就**会出现 key 为 null 的 Entry（内存泄露，不会被回收）**。
 
 `ThreadLocalMap` 实现中已经考虑了这种情况，在调用 `set()`、`get()`、`remove()` 方法的时候，会清理掉 key 为 null 的记录。使用完 `ThreadLocal`方法后最好手动调用`remove()`方法
+
+
 
 ![ThreadLocal 数据结构](http://42.192.130.83:9000/picgo/imgs/threadlocal-data-structure.png)
 
@@ -729,10 +709,10 @@ public static void main(String[] args) {
     >   ```
     >   javaCopy codeimport java.util.concurrent.locks.Lock;
     >   import java.util.concurrent.locks.ReentrantLock;
-    >                
+    >                  
     >   public class InterruptibleLockExample {
     >       private final Lock lock = new ReentrantLock();
-    >                
+    >                  
     >       public void performTask() throws InterruptedException {
     >           lock.lockInterruptibly(); // 线程可以被中断
     >           try {
@@ -1117,7 +1097,51 @@ public static void main(String[] args) throws InterruptedException {
 }
 ```
 
+## [美团面试：如何检测和避免线程死锁? (qq.com)](https://mp.weixin.qq.com/s/RTSPH23dTvLA3hOBT7CwtQ)
 
+1. **互斥条件**：该资源任意一个时刻只由一个线程占用。
+2. **请求与保持条件**：一个线程因请求资源而阻塞时，对已获得的资源保持不放。
+3. **不剥夺条件**:线程已获得的资源在未使用完之前不能被其他线程强行剥夺，只有自己使用完毕后才释放资源。
+4. **循环等待条件**:若干线程之间形成一种头尾相接的循环等待资源关系。
 
- l
+### 如何预防和避免线程死锁?
+
+#### **如何预防死锁？** 破坏死锁的产生的必要条件即可：
+
+1. **破坏请求与保持条件**：一次性申请所有的资源。**申请所有资源**
+2. **破坏不剥夺条件**：占用部分资源的线程进一步申请其他资源时，如果申请不到，可以主动释放它占有的资源。**主动释放**
+3. **破坏循环等待条件**：靠按序申请资源来预防。按某一顺序申请资源，释放资源则反序释放。破坏循环等待条件。**按顺序获取**
+
+#### **如何避免死锁？**
+
+- 线程2变成先获取A；只有1释放A后2才能获取B
+
+```java
+new Thread(
+        ()->{
+            synchronized (a) {
+                System.out.println(Thread.currentThread().getName() + "a");
+                synchronized (b) {
+
+                }
+            }
+        }
+).start();
+```
+
+### 检测
+
+Jconsole
+
+**启动参数**
+
+```
+-Dcom.sun.management.jmxremote=true
+-Dcom.sun.management.jmxremote.port=8011
+-Dcom.sun.management.jmxremote.ssl=false
+-Dcom.sun.management.jmxremote.authenticate=false
+```
+
+![jconsole_xyA3XxdpEx](http://42.192.130.83:9000/picgo/imgs/jconsole_xyA3XxdpEx.png)
+
 
