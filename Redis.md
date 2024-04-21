@@ -72,6 +72,48 @@ IO效率高
 | geospatial  | 存储地理位置信息                                             |                                    |
 | hyperloglog | **无论集合包含的元素有多少个，HyperLogLog 进行计算所需的内存总是固定的，并且是非常少的**。每个 `HyperLogLog` 最多只需要花费 12KB 内存，就可以计算 2 的 64 次方个元素的基数。 | **基数统计**（单个页面的访问数量） |
 
+### String的底层结构？
+
+String 类型是通过一个称为 **SDS（Simple Dynamic String）的抽象数据类型**来实现的。
+
+优点：
+
+- 动态扩展，不会溢出
+- 可以记录长度，获取长度O1
+- 兼容C字符串函数
+
+```java
+struct sdshdr {
+    int len; // 字符串的实际长度
+    int free; // 未使用的空间长度
+    char buf[]; // 实际存储的字符串数据
+};
+```
+
+### **为什么Sorted set底层不用二叉树，平衡树实现？**
+
+- 实现简单，插入和删除不用旋转（平衡）
+- 时间复杂度和树相当
+- 在做**范围查找**的时候，平衡树比skiplist操作要复杂
+
+[Redis为什么用跳表而不用平衡树？ - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/23370124)
+
+- 平衡树如 AVL 树或红黑树每个节点通常需要存储更多的信息来**维持树的平衡**
+- 跳跃表在进行**范围查询**（如 `ZRANGE` 或 `ZREVRANGE`）时，可以像链表一样遍历
+- **实现简单性**：跳跃表的结构和算法相对简单
+
+> > There are a few reasons:
+> >
+> > \1) They are not very memory intensive. It's up to you basically. Changing parameters about the probability of a node to have a given number of levels will make then less memory intensive than btrees.
+> >
+> > \2) A sorted set is often target of many ZRANGE or ZREVRANGE operations, that is, traversing the skip list as a linked list. With this operation the cache locality of skip lists is at least as good as with other kind of balanced trees.
+> >
+> > \3) They are simpler to implement, debug, and so forth. For instance thanks to the skip list simplicity I received a patch (already in Redis master) with augmented skip lists implementing ZRANK in O(log(N)). It required little changes to the code.
+> >
+> > 
+> >
+> > 这段话原文出处：[https://news.ycombinator.com/it](https://link.zhihu.com/?target=https%3A//news.ycombinator.com/item%3Fid%3D1171423)
+
 ###  String 还是 Hash 存储对象数据更好呢？
 
 - Map存储的是整个对象，可以做单独的修改。**Map节省流量**。
@@ -773,8 +815,8 @@ io-threads 4 #设置1的话只会开启主线程，官网建议4核的机器建�
 
 内存不足时，写入数据：
 
-1. LRU（**最近**最少使用）访问顺序最早的
-2. LFU（不经常使用） 访问频率最少的
+1. LRU（**最近**最少使用Least Recently Used）访问顺序最早的
+2. LFU（不经常使用Least Frequently Used） 访问频率最少的
 3. 随机淘汰
 4. 默认：新写入报错。
 
@@ -793,6 +835,18 @@ Redis 事务是**不支持回滚（roll back）**操作的。因此，Redis 事�
 也不支持回滚，**严格来说的话，通过 Lua 脚本来批量执行 Redis 命令实际也是不完全满足原子性的。**
 
 ## Redis性能优化（重要）
+
+### 什么是热点Key问题？什么样的key被称为热key？如何解决热点Key？
+
+热点 Key 是指在分布式系统中，**某些特定的键（Key）被频繁地访问或操作**，导致集中的热点流量集中在少数几个键上，而其他键的访问压力相对较低的问题。
+
+- 策略：对于热门 Key，可以采用更长的缓存过期时间或使用永久缓存
+- 缓存预热
+- 数据分片：将热门 Key 分散到多个节点或服务器上，使访问负载均衡
+- 限流与熔断
+- 异步处理：将热门 Key 的请求转换为异步处理，减少同步请求的阻塞，提高系统的并发处理能力。
+
+
 
 ### Redis常见阻塞原因总结
 
@@ -890,6 +944,8 @@ Redis 事务是**不支持回滚（roll back）**操作的。因此，Redis 事�
   - 一般情况下**不能从布隆过滤器中删除元素**
 
 ### 什么是缓存击穿？有哪些解决办法？
+
+缓存击穿发生在高并发场景下，缓存中（包括本地缓存和Redis缓存）的某一个Key被高并发的访问没有命中；缓存雪崩发生在同一时段大量的缓存key同时失效或者Redis服务宕机。
 
 - **对应缓存**没有，数据库有。**热点数据**不存在（比如过期），大量数据到数据库中存储。
 

@@ -40,6 +40,34 @@
 - 使用Read View，类似于快照进行读操作。
 - **版本链** 每当对数据进行修改时，InnoDB 不会直接修改原始数据，而是**创建一个新的数据版本**，并将该版本添加到**版本链**中。因此，对同一数据的不同版本都可以在数据库中存在。
 
+InnoDB 的 MVCC的实现原理
+
+[InnoDB存储引擎对MVCC的实现](https://javaguide.cn/database/mysql/innodb-implementation-of-mvcc.html)
+
+> `MVCC` 的实现依赖于：**隐藏字段、Read View、undo log**。
+>
+> ### [隐藏字段](#隐藏字段)
+>
+> 在内部，`InnoDB` 存储引擎为每行数据添加了三个 [隐藏字段open in new window](https://dev.mysql.com/doc/refman/5.7/en/innodb-multi-versioning.html)：
+>
+> - **`DB_TRX_ID（6字节）`：更新操作事务id**
+> - **`DB_ROLL_PTR（7字节）`： 回滚指针**
+> - `DB_ROW_ID（6字节）`：如果没有设置主键且该表没有唯一非空索引时，`InnoDB` 会使用该 id 来生成聚簇索引
+>
+> ![image-20240418220417906](http://42.192.130.83:9000/picgo/imgs/image-20240418220417906.png)
+>
+> ### UndoLog
+>
+> 作用：事务回滚、通过undolog读取之前的版本（非锁定读）
+>
+> ![img](http://42.192.130.83:9000/picgo/imgs/6a276e7a-b0da-4c7b-bdf7-c0c7b7b3b31c-n52toho_.png)
+>
+> ### Read View
+>
+> - 记录（正在执行的事务，未提交的事务、未开始的事务）
+>
+> ![image-20240418221022981](http://42.192.130.83:9000/picgo/imgs/image-20240418221022981.png)
+
 ### MVCC有哪些隔离机制？对应是怎么实现的？
 
 - **Read Commited**：每次读取时创建Read View，**解决读脏问题（读未提交）**

@@ -57,6 +57,117 @@ Java 提供了三种创建线程的方法：
   - V Callable
 - 抛出异常 Callable.call()可以throw
 
+## syncronized的底层实现？
+
+**1.6之前**
+
+Synchronized在**JDK1.6版本之前**是通过**重量级锁的方式**来实现线程之间的一个锁的竞争的。之所以称它为重量级锁是因为它的底层依赖[操作系统](https://so.csdn.net/so/search?q=操作系统&spm=1001.2101.3001.7020)层面的**Mutex Lock**来去实现互斥锁的一个功能。
+
+[Mutex](https://so.csdn.net/so/search?q=Mutex&spm=1001.2101.3001.7020)是系统方法，由于权限隔离的关系，应用程序调用系统方法的时候，**需要（系统调用）切换到内核状态来执行**。那这样就涉及到用户态向内核态的一个切换。这个切换会带来性能上的一个损耗。
+
+**1.6之后**
+
+synchronized根据线程的竞争情况先去**尝试在不加重量级锁的情况下，去保证线程安全性**
+
+#### 1. 无锁
+
+就是没有锁的过程。
+
+#### 2. 偏向锁
+
+偏向锁就是直接把当前的锁偏向于某个线程，简单来说就是通过**CAS机制来修改偏向锁的一个标记**。
+
+#### 3. 轻量级锁
+
+轻量级锁**也可以称为自旋锁**，两个线程竞争
+
+#### 4. 重量级锁
+
+
+
+## Reentranlock的底层实现？
+
+[AQS 详解 | JavaGuide](https://javaguide.cn/java/concurrent/aqs.html)
+
+**AbstractQueuedSynchronizer** 先尝试**cas乐观锁**去获取锁，获取不到，才会转换为**悲观锁**，如 RetreenLock。
+
+**核心思想：**
+
+- 如果资源空闲：当前请求资源的线程设置为有效的工作线程，并锁定。
+
+- 如果资源被占用：
+
+  需要一套线程阻塞等待以及被唤醒时锁分配的机制，这个机制 AQS 是基于 **CLH 锁** （Craig, Landin, and Hagersten locks） 实现的
+
+  当持有锁的线程释放锁时，**AQS 会唤醒等待队列中的一个或多个线程，使它们重新竞争锁的获取**。
+
+**CLH 锁**
+
+CLH 锁是对自旋锁的一种改进，是一个虚拟的双向队列。
+
+```java
+/** CLH Nodes */
+    abstract static class Node {
+        // 初始情况下，节点通过casTail操作被附加
+        volatile Node prev;
+        // 当节点是signallable时，这个变量是可见的
+        volatile Node next;
+        // 表示等待该节点的线程
+        Thread waiter;
+        // 表示节点的状态 表示同步状态
+        volatile int status;
+    }
+//返回同步状态的当前值
+protected final int getState() {
+     return state;
+}
+ // 设置同步状态的值
+protected final void setState(int newState) {
+     state = newState;
+}
+//原子地（CAS操作）将同步状态值设置为给定值update如果当前同步状态的值等于expect（期望值）
+protected final boolean compareAndSetState(int expect, int update) {
+      return unsafe.compareAndSwapInt(this, stateOffset, expect, update);
+}
+```
+
+![CLH 队列结构](https://oss.javaguide.cn/github/javaguide/java/concurrent/clh-queue-structure.png)
+
+![CLH 队列](http://42.192.130.83:9000/picgo/imgs/clh-queue-state.png)
+
+`ReentrantLock` 为例
+
+- 在公平锁中，AQS会选择等待时间最长的节点唤醒
+
+[从ReentrantLock的实现看AQS的原理及应用 | JavaGuide](https://javaguide.cn/java/concurrent/reentrantlock.html)
+
+```java
+// java.util.concurrent.locks.ReentrantLock#NonfairSync
+
+// 非公平锁
+static final class NonfairSync extends Sync {
+  ...
+  final void lock() {
+    if (compareAndSetState(0, 1))
+     // CAS 设置变量 State（同步状态）成功，也就是获取锁成功，则将当前线程设置为独占线程。
+  setExclusiveOwnerThread(Thread.currentThread());
+    else
+        // 若通过 CAS 设置变量 State（同步状态）失败，也就是获取锁失败，则进入 Acquire 方法进行后续处理。
+      acquire(1);
+    }
+  ...
+}
+
+```
+
+- 获取不到锁的后续处理
+
+
+
+
+
+
+
 ## synchronized是什么，有什么性质？
 
 同步方法块，只能被一个线程访问。
@@ -197,6 +308,57 @@ class LazySingletonDCL{
 >    **如果先赋值再初始化，B线程会使用到没有初始化的对象**
 >
 >    指令重排序，如果先赋值了instance变量，那么b线程`if (singleton == null)`为false，但==线程B使用了一个**没有被初始化的对象引用**==
+
+## [volatile 可以保证原子性么？](https://javaguide.cn/java/concurrent/java-concurrent-questions-02.html#volatile-可以保证原子性么)
+
+**`volatile` 关键字能保证变量的可见性，但不能保证对变量的操作是原子性的。**
+
+**只能保证每次读取的都是最新的，但修改还是有可能覆盖掉**
+
+如果想要保证上面的代码运行正确也非常简单，利用 `synchronized`、`Lock`或者`AtomicInteger`都可以。
+
+> `inc++` 其实是一个复合操作，包括三步：
+>
+> 1. 读取 inc 的值。
+> 2. 对 inc 加 1。
+> 3. 将 inc 的值写回内存。
+>
+> -----
+>
+> - 线程 1 对 `inc` 进行读取操作之后，还未对其进行修改。线程 2 又读取了 `inc`的值并对其进行修改（+1），再将`inc` 的值写回内存。
+> - 线程 2 操作完毕后，线程 1 对 `inc`的值进行修改（+1），再将`inc` 的值写回内存。
+>
+> 这也就导致两个线程分别对 `inc` 进行了一次自增操作后，`inc` 实际上只增加了 1。
+
+```java
+public class VolatileAtomicityDemo {
+    public volatile static int inc = 0;
+
+    public void increase() {
+        inc++;
+    }
+
+    // 如果 volatile 能保证 inc++ 操作的原子性的话。每个线程中对 inc 变量自增完之后，其他线程可以立即看到修改后的值。5 个线程分别进行了 500 次操作，那么最终 inc 的值应该是 5*500=2500。
+    public static void main(String[] args) throws InterruptedException {
+        ExecutorService threadPool = Executors.newFixedThreadPool(5);
+        VolatileAtomicityDemo volatileAtomicityDemo = new VolatileAtomicityDemo();
+        for (int i = 0; i < 5; i++) {
+            threadPool.execute(() -> {
+                for (int j = 0; j < 500; j++) {
+                    volatileAtomicityDemo.increase();
+                }
+            });
+        }
+        // 等待1.5秒，保证上面程序执行完成
+        Thread.sleep(1500);
+        System.out.println(inc);
+        threadPool.shutdown();
+    }
+}
+
+```
+
+
 
 ## 问题：synchronized和volatile的区别
 
@@ -424,6 +586,11 @@ class MyTask implements Runnable {
 >     - 运行线程>maximumPoolSize，拒绝策略
 >
 > **corePoolSize->workQueue->maximumPoolSize**
+
+## 如果线程到达 maximumPoolSize 仍然有新任务来临，并且该任务的优先级比较高，不允许直接丢弃，希望该任务立即执行，如何处理？
+
+- 调整线程池大小
+- 使用优先队列，优先级高的先执行
 
 ## ThreadLocal有什么用
 
@@ -729,10 +896,10 @@ public static void main(String[] args) {
     >   ```
     >   javaCopy codeimport java.util.concurrent.locks.Lock;
     >   import java.util.concurrent.locks.ReentrantLock;
-    >                
+    >                      
     >   public class InterruptibleLockExample {
     >       private final Lock lock = new ReentrantLock();
-    >                
+    >                      
     >       public void performTask() throws InterruptedException {
     >           lock.lockInterruptibly(); // 线程可以被中断
     >           try {
@@ -916,10 +1083,6 @@ public final native boolean compareAndSwapInt(Object var1, long var2, int var4, 
 - 缺点：竞争激烈的情况下，会有大量线程竞争一个锁。
 
   **线程自旋消耗和阻塞挂起消耗。**
-
-## AQS框架
-
-**AbstractQueuedSynchronizer** 先尝试**cas乐观锁**去获取锁，获取不到，才会转换为**悲观锁**，如 RetreenLock。
 
 ## Semaphore是什么？有什么用？
 

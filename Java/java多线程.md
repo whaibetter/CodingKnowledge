@@ -709,10 +709,10 @@ public static void main(String[] args) {
     >   ```
     >   javaCopy codeimport java.util.concurrent.locks.Lock;
     >   import java.util.concurrent.locks.ReentrantLock;
-    >                  
+    >                        
     >   public class InterruptibleLockExample {
     >       private final Lock lock = new ReentrantLock();
-    >                  
+    >                        
     >       public void performTask() throws InterruptedException {
     >           lock.lockInterruptibly(); // 线程可以被中断
     >           try {
@@ -897,9 +897,88 @@ public final native boolean compareAndSwapInt(Object var1, long var2, int var4, 
 
   **线程自旋消耗和阻塞挂起消耗。**
 
-## AQS框架
+## AQS是什么？// TODO
+
+[AQS 详解 | JavaGuide](https://javaguide.cn/java/concurrent/aqs.html)
 
 **AbstractQueuedSynchronizer** 先尝试**cas乐观锁**去获取锁，获取不到，才会转换为**悲观锁**，如 RetreenLock。
+
+如果CAS操作失败，说明有其他线程已经获取到了锁，当前线程会进入等待状态。当一个线程释放锁时，它会调用AQS的release方法来释放锁资源。
+
+**核心思想：**
+
+- 如果资源空闲：当前请求资源的线程设置为有效的工作线程，并锁定。
+
+- 如果资源被占用：
+
+  需要一套线程阻塞等待以及被唤醒时锁分配的机制，这个机制 AQS 是基于 **CLH 锁** （Craig, Landin, and Hagersten locks） 实现的
+  
+  当持有锁的线程释放锁时，**AQS 会唤醒等待队列中的一个或多个线程，使它们重新竞争锁的获取**。
+
+**CLH 锁**
+
+CLH 锁是对自旋锁的一种改进，是一个虚拟的双向队列。**检查前驱结点状态**
+
+```java
+/** CLH Nodes */
+    abstract static class Node {
+        // 初始情况下，节点通过casTail操作被附加
+        volatile Node prev;
+        // 当节点是signallable时，这个变量是可见的
+        volatile Node next;
+        // 表示等待该节点的线程
+        Thread waiter;
+        // 表示节点的状态 表示同步状态
+        volatile int status;
+    }
+//返回同步状态的当前值
+protected final int getState() {
+     return state;
+}
+ // 设置同步状态的值
+protected final void setState(int newState) {
+     state = newState;
+}
+//原子地（CAS操作）将同步状态值设置为给定值update如果当前同步状态的值等于expect（期望值）
+protected final boolean compareAndSetState(int expect, int update) {
+      return unsafe.compareAndSwapInt(this, stateOffset, expect, update);
+}
+```
+
+![CLH 队列结构](https://oss.javaguide.cn/github/javaguide/java/concurrent/clh-queue-structure.png)
+
+![CLH 队列](http://42.192.130.83:9000/picgo/imgs/clh-queue-state.png)
+
+`ReentrantLock` 为例
+
+- 在公平锁中，AQS会选择等待时间最长的节点唤醒
+
+[从ReentrantLock的实现看AQS的原理及应用 | JavaGuide](https://javaguide.cn/java/concurrent/reentrantlock.html)
+
+```java
+// java.util.concurrent.locks.ReentrantLock#NonfairSync
+
+// 非公平锁
+static final class NonfairSync extends Sync {
+  ...
+  final void lock() {
+    if (compareAndSetState(0, 1))
+     // CAS 设置变量 State（同步状态）成功，也就是获取锁成功，则将当前线程设置为独占线程。
+  setExclusiveOwnerThread(Thread.currentThread());
+    else
+        // 若通过 CAS 设置变量 State（同步状态）失败，也就是获取锁失败，则进入 Acquire 方法进行后续处理。
+      acquire(1);
+    }
+  ...
+}
+
+```
+
+- 获取不到锁的后续处理
+
+
+
+
 
 ## Semaphore是什么？有什么用？
 
@@ -1143,5 +1222,4 @@ Jconsole
 ```
 
 ![jconsole_xyA3XxdpEx](http://42.192.130.83:9000/picgo/imgs/jconsole_xyA3XxdpEx.png)
-
 

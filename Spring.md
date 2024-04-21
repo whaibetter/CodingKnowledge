@@ -953,7 +953,7 @@ com.whai.custom.MyServiceAutoConfiguration
   >   public class MyCustomEvent extends ApplicationEvent {
   >       // ...
   >   }
-  >         
+  >           
   >   // 监听器
   >   @Component
   >   public class MyCustomEventListener implements ApplicationListener<MyCustomEvent> {
@@ -962,13 +962,13 @@ com.whai.custom.MyServiceAutoConfiguration
   >           // 处理事件
   >       }
   >   }
-  >         
+  >           
   >   // 发布事件
   >   @Service
   >   public class MyEventPublisher {
   >       @Autowired
   >       private ApplicationEventPublisher eventPublisher;
-  >         
+  >           
   >       public void publishEvent() {
   >           // 发布事件
   >           eventPublisher.publishEvent(new MyCustomEvent(this));
@@ -1012,14 +1012,22 @@ com.whai.custom.MyServiceAutoConfiguration
 
 - 事务传播行为是为了解决方法调用的事务问题。
 
-> 1. **传播 `TransactionDefinition.PROPAGATION_REQUIRED`** 该方法在事务中，就为该事务的一部分；如果不在，启动一个新事务。（B属于A）
-> 2. **新建 `TransactionDefinition.PROPAGATION_REQUIRES_NEW`** 不管外部方法，直接重启一个新事务。
-> 3. **嵌套 `TransactionDefinition.PROPAGATION_NESTED`** 嵌套一个子事务
-> 4. 强制性 **`TransactionDefinition.PROPAGATION_MANDATORY`**
+> 1. REQUIRED 要求事务
+> 2. REQUIRES_NEW 要求新事务
+> 3. NESTED 嵌套子事务
+> 4. MANDATORY 强制事务
+> 5. SUPPORTS 是否支持事务，支持就in，不支持就不in
+> 6. NOT_SUPPORTED 非事务运行
+> 7. PROPAGATION_NEVER 不事务
 
-1. **`TransactionDefinition.PROPAGATION_SUPPORTS`**: 如果当前存在事务，则加入该事务；如果当前没有事务，则以非事务的方式继续运行。
-2. **`TransactionDefinition.PROPAGATION_NOT_SUPPORTED`**: 以非事务方式运行，如果当前存在事务，则把当前事务挂起。
-3. **`TransactionDefinition.PROPAGATION_NEVER`**: 以非事务方式运行，如果当前存在事务，则抛出异常。
+> 1. **传播REQUIRED `TransactionDefinition.PROPAGATION_REQUIRED`** 该方法在事务中，就为该事务的一部分；如果不在，启动一个新事务。（B属于A）
+> 2. **新建REQUIRES_NEW `TransactionDefinition.PROPAGATION_REQUIRES_NEW`** 不管外部方法，直接重启一个新事务。
+> 3. **嵌套NESTED `TransactionDefinition.PROPAGATION_NESTED`** 嵌套一个子事务
+> 4. 强制性MANDATORY**`TransactionDefinition.PROPAGATION_MANDATORY`**
+
+4. **没有事物就非事务SUPPORTS**`TransactionDefinition.PROPAGATION_SUPPORTS`**: 如果当前存在事务，则加入该事务；如果当前没有事务，则以非事务的方式继续运行。**
+5. **非事务NOT_SUPPORTED**`TransactionDefinition.PROPAGATION_NOT_SUPPORTED` 以非事务方式运行，如果当前存在事务，则把当前事务挂起。
+6. **非事务方式运行，存在事务就报错PROPAGATION_NEVER**`TransactionDefinition.PROPAGATION_NEVER` 以非事务方式运行，如果当前存在事务，则抛出异常。
 
 ### Spring 事务中的隔离级别有哪几种?
 

@@ -328,6 +328,12 @@ HashSet(int initialCapacity, float loadFactor, boolean dummy) {
 
 ## HashMap
 
+### HashMap为什么线程不安全？
+
+- HashMap的内部实现不提供同步机制，即没有对多线程访问进行并发控制。**多个线程同时对HashMap进行修改操作（插入、删除、更新等），可能会导致数据结构的破坏和不一致性。**
+- fail-fast：在迭代过程中有其他线程对HashMap进行修改，可能会导致ConcurrentModificationException异常或遗漏元素
+- 当**多个线程put到同一个桶**可能会被覆盖
+
 ### HashMap结构
 
 ![给面试官讲解hashmap底层原理后，他表示很看好我 | w3c笔记](http://42.192.130.83:9000/picgo/imgs/1597914836534882.png)
@@ -407,6 +413,12 @@ HashSet(int initialCapacity, float loadFactor, boolean dummy) {
   ![效率最高的是entryset](https://mmbiz.qpic.cn/mmbiz_png/HrWw6ZuXCsgeYXAj2Uedoee2ibmnwMYLeaIRiatjtU387kxT68GwIsktTRnlgIvQdQIrH9WZtenTCMl1sVF1JNOA/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
 
 ## ConcurrentHashMap
+
+### concurrenthashmap，为什么1.7用reentrantlock，1.8用CAS+synchronized?
+
+使用了CAS（Compare and Swap）操作和`synchronized`关键字的组合来实现并发控制。
+
+**使用CAS和`synchronized`的组合在一些场景下可以提供更高的性能，因为CAS操作不需要线程进入阻塞状态。**
 
 ### 1.8之前的ConcurrentHashMap结构
 
