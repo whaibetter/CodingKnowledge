@@ -105,6 +105,14 @@ synchronized根据线程的竞争情况先去**尝试在不加重量级锁的情
 
 CLH 锁是对自旋锁的一种改进，是一个虚拟的双向队列。
 
+> **AQS的状态**
+>
+> 1. **CANCELLED**：值为1，表示节点进入取消状态，不再变化。**锁请求被取消**，当一个线程决定不再等待获取锁时
+> 2. **SIGNAL**：值为-1，表示后继节点需要被唤醒。**表示这个节点执行完（完成同步操作后）会通知后继节点**
+> 3. **CONDITION**：值为-2，表示节点在**等待条件队列**中。在队列中等待
+> 4. **PROPAGATE**：值为-3，表示下一次的**共享状态**会被无条件的传播下去。
+> 5. **0**：表示初始状态或无特殊状态。
+
 ```java
 /** CLH Nodes */
     abstract static class Node {
@@ -125,7 +133,7 @@ protected final int getState() {
 protected final void setState(int newState) {
      state = newState;
 }
-//原子地（CAS操作）将同步状态值设置为给定值update如果当前同步状态的值等于expect（期望值）
+//原子地（CAS操作）将同步状态值设置为给定值update如果当前同步状态的值等于expect（期望值） CAS修改状态，表示不同的状态
 protected final boolean compareAndSetState(int expect, int update) {
       return unsafe.compareAndSwapInt(this, stateOffset, expect, update);
 }
@@ -896,10 +904,10 @@ public static void main(String[] args) {
     >   ```
     >   javaCopy codeimport java.util.concurrent.locks.Lock;
     >   import java.util.concurrent.locks.ReentrantLock;
-    >                      
+    >                        
     >   public class InterruptibleLockExample {
     >       private final Lock lock = new ReentrantLock();
-    >                      
+    >                        
     >       public void performTask() throws InterruptedException {
     >           lock.lockInterruptibly(); // 线程可以被中断
     >           try {
