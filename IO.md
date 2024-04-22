@@ -11,6 +11,8 @@
   - 系统调用
   - `read()` ` write()`
 
+  ![202211211631552](http://42.192.130.83:9000/picgo/imgs/202211211631552.png)
+
 - 非阻塞IO NIO
 
   程序**不会等待IO完成**，继续执行后续代码。即使IO操作还没有完成，程序也可以继续执行其他任务。
@@ -18,9 +20,13 @@
   - 轮询检查IO是否完成
   - 事件机制（回调、事件处理器）返回IO结果
 
+![202211211631553 (1)](http://42.192.130.83:9000/picgo/imgs/202211211631553 (1).png)
+
 - IO多路复用
 
   允许一个程序**监控多个IO资源**，任何一个资源就绪就能处理
+
+  ![image-20221121161111685](http://42.192.130.83:9000/picgo/imgs/202211211631554 (1).png)
 
 ## 有哪些IO模型？
 
@@ -47,15 +53,21 @@
 
 <img src="http://42.192.130.83:9000/picgo/imgs/bb174e22dbe04bb79fe3fc126aed0c61~tplv-k3u1fbpfcp-watermark.png" alt="图源：《深入拆解Tomcat & Jetty》" style="zoom:50%;" />
 
+![202211211631553](http://42.192.130.83:9000/picgo/imgs/202211211631553.png)
+
 #### **I/O 多路复用模型**
 
 1. select/poll/epoll 询问**数据是否准备就绪**
 2. ready 内核准备就绪
 3. read （数据从内核空间 -> 用户空间）**阻塞**
 
-**IO 多路复用模型，通过减少无效的系统调用（只有当IO事件发生时才触发系统调用），减少了对 CPU 资源的消耗。**
+**IO 多路复用模型，通过减少无效的系统调用（只有当IO事件发生时才触发系统调用，==由内核去进行轮询==），减少了对 CPU 资源的消耗。**
 
 <img src="http://42.192.130.83:9000/picgo/imgs/88ff862764024c3b8567367df11df6ab~tplv-k3u1fbpfcp-watermark.png" alt="img" style="zoom:50%;" />
+
+![image-20221121161111685](http://42.192.130.83:9000/picgo/imgs/202211211631554 (1).png)
+
+![](http://42.192.130.83:9000/picgo/imgs/image-20240422223715000.png)
 
 #### **多路复用器**
 
@@ -72,6 +84,8 @@ Java 中的 NIO ，有一个非常重要的**选择器 ( Selector )** 的概念�
 ### NIO 核心组件？
 
 ![Buffer、Channel和Selector三者之间的关系](http://42.192.130.83:9000/picgo/imgs/channel-buffer-selector.png)
+
+![image-20240422223715000](http://42.192.130.83:9000/picgo/imgs/image-20240422223715000.png)
 
 Thread select，让Selector去轮询
 
