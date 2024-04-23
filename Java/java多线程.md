@@ -488,6 +488,8 @@ Thread Name= Thread-2 localVariable = 101
 
 `Thread` 类中有一个 `threadLocals` 和 一个 `inheritableThreadLocals` 变量。
 
+`InheritableThreadLocal`**允许父线程和子线程之间相互访问彼此的变量副本**。
+
 ```java
 public class Thread implements Runnable {
     //......
@@ -709,10 +711,10 @@ public static void main(String[] args) {
     >   ```
     >   javaCopy codeimport java.util.concurrent.locks.Lock;
     >   import java.util.concurrent.locks.ReentrantLock;
-    >                        
+    >                          
     >   public class InterruptibleLockExample {
     >       private final Lock lock = new ReentrantLock();
-    >                        
+    >                          
     >       public void performTask() throws InterruptedException {
     >           lock.lockInterruptibly(); // 线程可以被中断
     >           try {
