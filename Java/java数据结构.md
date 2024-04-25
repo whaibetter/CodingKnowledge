@@ -414,6 +414,95 @@ HashSet(int initialCapacity, float loadFactor, boolean dummy) {
 
 ## ConcurrentHashMap
 
+> 插入操作时
+>
+> 1. 乐观锁循环进入
+> 2. 是否初始化
+>    - 判断Hash位置**是否为空**，为空使用CAS插入Node（初始化）
+>    - 判断**是否扩容**，helpTransfer
+>    - 都不是，加syncronized锁，找到hash，循环判断
+>
+> 获取
+>
+> - volatile保证最新
+
+- volatile
+
+```java
+//ConcurrentHashMap使用volatile修饰节点数组，保证其可见性，禁止指令重排。
+transient volatile Node<K,V>[] table;
+```
+
+```java
+final V putVal(K key, V value, boolean onlyIfAbsent) {
+    if (key == null || value == null) throw new NullPointerException();
+    int hash = spread(key.hashCode());
+    int binCount = 0;
+    // 情商高的就会说，这是一个乐观锁
+    for (Node<K,V>[] tab = table;;) {
+        Node<K,V> f; int n, i, fh;
+        if (tab == null || (n = tab.length) == 0)
+            tab = initTable(); // 初始化
+        else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
+            // CAS比较
+            if (casTabAt(tab, i, null,
+                         new Node<K,V>(hash, key, value, null)))
+                break;                   // no lock when adding to empty bin
+        }
+        else if ((fh = f.hash) == MOVED) // 正在扩容中
+            tab = helpTransfer(tab, f);
+        else {
+            V oldVal = null;
+            synchronized (f) {
+                if (tabAt(tab, i) == f) {
+                    if (fh >= 0) {
+                        binCount = 1;
+                        // 找到了链表
+                        for (Node<K,V> e = f;; ++binCount) {
+                            K ek;
+                            // 找到了hash和key相同的节点，更新
+                            if (e.hash == hash &&
+                                ((ek = e.key) == key ||
+                                 (ek != null && key.equals(ek)))) {
+                                oldVal = e.val;
+                                if (!onlyIfAbsent)
+                                    e.val = value;
+                                break;
+                            }
+                            Node<K,V> pred = e;
+                            if ((e = e.next) == null) {
+                                pred.next = new Node<K,V>(hash, key,
+                                                          value, null);
+                                break;
+                            }
+                        }
+                    }
+                    else if (f instanceof TreeBin) {
+                        Node<K,V> p;
+                        binCount = 2;
+                        if ((p = ((TreeBin<K,V>)f).putTreeVal(hash, key,
+                                                       value)) != null) {
+                            oldVal = p.val;
+                            if (!onlyIfAbsent)
+                                p.val = value;
+                        }
+                    }
+                }
+            }
+            if (binCount != 0) {
+                if (binCount >= TREEIFY_THRESHOLD)
+                    treeifyBin(tab, i);
+                if (oldVal != null)
+                    return oldVal;
+                break;
+            }
+        }
+    }
+    addCount(1L, binCount);
+    return null;
+}
+```
+
 ### concurrenthashmap，为什么1.7用reentrantlock，1.8用CAS+synchronized?
 
 使用了CAS（Compare and Swap）操作和`synchronized`关键字的组合来实现并发控制。
