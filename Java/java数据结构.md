@@ -741,6 +741,243 @@ abstract class HashIterator {
 }
 ```
 
+## other
+
 ### 为什么HashMap使用红黑树不使平衡树？
 
 红黑树作为一种自平衡二叉搜索树，具有较好的平衡性能，保证了在最坏情况下的查找、插入和删除操作的时间复杂度为 O(log N)。相比之下，**平衡树（如 AVL 树）虽然也具有良好的平衡性能，但在插入和删除操作时可能需要更多的旋转操作，导致性能的略微下降**。
+
+### 说说有哪些常见的集合框架？
+
+Java 集合框架可以分为两条大的支线：
+
+①、Collection，主要由 List、Set、Queue 组成：
+
+- List 代表有序、可重复的集合，典型代表就是封装了动态数组的 [ArrayList](https://javabetter.cn/collection/arraylist.html) 和封装了链表的 [LinkedList](https://javabetter.cn/collection/linkedlist.html)；
+- Set 代表无序、不可重复的集合，典型代表就是 HashSet 和 TreeSet；
+- Queue 代表队列，典型代表就是双端队列 [ArrayDeque](https://javabetter.cn/collection/arraydeque.html)，以及优先级队列 [PriorityQueue](https://javabetter.cn/collection/PriorityQueue.html)。
+
+②、Map，代表键值对的集合，典型代表就是 [HashMap](https://javabetter.cn/collection/hashmap.html)。
+
+![二哥的 Java 进阶之路：Java集合主要关系](http://42.192.130.83:9000/picgo/imgs/gailan-01.png)
+
+### ArrayList 怎么序列化的知道吗？  ArrayList 怎么序列化呢？
+
+```java
+/**
+存储数组列表元素的数组缓冲区。数组列表的容量是此数组缓冲区的长度。添加第一个元素时，任何带有 elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA 的空 ArrayList 都将扩展到 DEFAULT_CAPACITY。
+ */
+transient Object[] elementData; // non-private to simplify nested class access
+```
+
+#### 为什么最 ArrayList 不直接序列化元素数组呢？
+
+出于效率的考虑，数组可能长度 100，但实际只用了 50，剩下的 50 不用其实不用序列化，这样可以提高序列化和反序列化的效率，还可以节省内存空间。
+
+#### **那 ArrayList 怎么序列化呢？**
+
+ArrayList 通过两个方法**readObject、writeObject**自定义序列化和反序列化策略，实际直接使用两个流`ObjectOutputStream`和`ObjectInputStream`来进行序列化和反序列化。
+
+![ArrayList自定义序列化](http://42.192.130.83:9000/picgo/imgs/collection-6.png)
+
+### 快速失败(fail-fast)和安全失败(fail-safe)了解吗？
+
+**快速失败（fail—fast）**：快速失败是 Java 集合的一种错误检测机制
+
+- 在用迭代器遍历一个集合对象时，如果线程 A 遍历过程中，线程 B 对集合对象的内容进行了修改（增加、删除、修改），则会抛出 Concurrent Modification Exception。
+- **原理：** iterator遍历过程中使用一个 `modCount` 变量，在遍历时 `hasNext/next `检查`modCount `变量是否为` expectedmodCount` 值
+- 场景：java.util 包下的集合类都是快速失败的，不能在多线程下发生并发修改（迭代过程中被修改），比如 ArrayList 类。
+
+**==安全==失败（fail—safe）**
+
+- 采用安全失败机制的集合容器，在遍历时不是直接在集合内容上访问的，而是先复制原有集合内容，**在拷贝的集合上进行遍历**。
+- 不会触发 Concurrent Modification Exception。
+- 缺点：Iterator只能获取修改前的集合拷贝
+- 场景：java.util.concurrent 包下的容器都是安全失败，可以在多线程下并发使用，并发修改，比如 CopyOnWriteArrayList 类。
+
+### CopyOnWriteArrayList 了解多少？
+
+`CopyOnWrite`——写时复制
+
+允许并发读，读操作是无锁的，性能较高。
+
+写操作，**加syncronized写**， 比如向容器中添加一个元素，则首先将当前容器复制一份，然后在新副本上执行写操作，结束之后再将原容器的引用指向新容器。
+
+```java
+public boolean add(E e) {
+    synchronized (lock) {
+        Object[] es = getArray();
+        int len = es.length;
+        es = Arrays.copyOf(es, len + 1);
+        es[len] = e;
+        setArray(es);
+        return true;
+    }
+}
+```
+
+![CopyOnWriteArrayList原理](http://42.192.130.83:9000/picgo/imgs/collection-7.png)
+
+### 红黑树了解多少？为什么不用二叉树/平衡树呢？
+
+1. 红或黑
+2. 根叶都是黑（叶子为null）
+3. 红节点的子节点一定为黑
+4. 所有路径红黑数量相同
+
+![红黑树](http://42.192.130.83:9000/picgo/imgs/collection-9.png)
+
+之所以不用二叉树：不平衡，极端场景
+
+之所以不用平衡二叉树：旋转消耗大
+
+### HashMap 的 hash 函数是怎么设计的?
+
+HashMap 的哈希函数是先拿到 key 的 hashcode，是一个 32 位的 int 类型的数值，然后让 hashcode 的高 16 位和低 16 位进行异或操作。
+
+```java
+static final int hash(Object key) {
+    int h;
+    // key的hashCode和key的hashCode右移16位做异或运算
+    return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+}
+```
+
+这么设计是为了降低哈希碰撞的概率。
+
+```java
+int c = this.hashCode();
+System.out.println(c);
+System.out.println((c >>> 16));
+System.out.println((c & (c >>> 16)));
+// 1879492184
+// 28678
+// 16384
+// c		  		1110000000001101100011001011000
+// (c >>> 16) 						111000000000110
+// (c & (c >>> 16)) 				100000000000000
+```
+
+###  hashCode 对数组长度取模定位数组下标，这块有没有优化策略？
+
+> - **当数组的长度是 2 的 n 次方**，或者 n 次幂，或者 n 的整数倍时，**取模运算/取余运算可以用位运算来代替，效率更高**，毕竟计算机本身只认二进制嘛。
+>
+> - (length-1)为全1
+>
+>   ```
+>   011010 key=26
+>   001111 len-1=15
+>   001010 10 映射到10位置上 26/16=10
+>   ```
+
+### HashMap扩容机制了解吗？
+
+扩容时，HashMap 会创建一个新的数组，其容量是原数组容量的两倍。
+
+1. 长度为2的倍数
+
+2. 新的HashMap.hash算法
+
+   ```java
+   static final int hash(Object key) {
+       int h;
+       return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+   }
+   ```
+
+在 JDK 8 的新 hash 算法下，数组扩容后的索引位置，要么就是原来的索引位置，要么就是**“原索引+原来的容量”**，遵循一定的规律。
+
+![三分恶面渣逆袭：扩容节点迁移示意图](http://42.192.130.83:9000/picgo/imgs/collection-27.png)
+
+### jdk1.8 对 HashMap 主要做了哪些优化呢？为什么？
+
+1. **数据结构**：数组 + 链表改成了数组 + 链表或红黑树
+
+2. **链表插入方式**：链表的插入方式从头插法改成了尾插法
+
+3. **扩容 rehash**：扩容的时候 1.7 需要对原数组中的元素进行重新 hash 定位在新数组的位置，1.8 采用更简单的判断逻辑，不需要重新通过哈希函数计算位置，**新的位置不变或索引 + 新增容量大小**。
+
+   **resize的时候判断每个节点与oldCap的&，就能确定新的位置存在哪**
+
+   ```java
+   /**
+    * 该代码段分割一个链表，根据链表元素的哈希值与旧容量（oldCap）的按位与运算结果，
+    * 将链表元素分为两个新的链表。这是一个内部循环，用于处理链表的分割逻辑。
+    * 
+    * @param e 链表的当前元素
+    * @param oldCap 旧容量，用于与元素的哈希值进行按位与运算来决定元素归属的新链表
+    * @param loHead 低哈希值链表的头元素
+    * @param loTail 低哈希值链表的尾元素
+    * @param hiHead 高哈希值链表的头元素
+    * @param hiTail 高哈希值链表的尾元素
+    * @return 无返回值，但会更新loHead、loTail、hiHead和hiTail引用，以指向分割后的链表头和尾
+    */
+   do {
+       // 获取下一个元素
+       next = e.next;
+       // 判断元素的哈希值是否与旧容量的按位与结果为0
+       if ((e.hash & oldCap) == 0) {
+           // 如果低哈希值链表头为空，设置头为当前元素
+           if (loTail == null)
+               loHead = e;
+           else
+               // 否则，将当前元素添加到低哈希值链表的尾部
+               loTail.next = e;
+           // 更新低哈希值链表的尾部为当前元素
+           loTail = e;
+       }
+       else {
+           // 如果高哈希值链表头为空，设置头为当前元素
+           if (hiTail == null)
+               hiHead = e;
+           else
+               // 否则，将当前元素添加到高哈希值链表的尾部
+               hiTail.next = e;
+           // 更新高哈希值链表的尾部为当前元素
+           hiTail = e;
+       }
+   } while ((e = next) != null); // 继续处理下一个元素，直到链表结束
+   ```
+
+4. **散列函数**：1.7 做了四次移位和四次异或，jdk1.8 只做一次。
+
+   ```java
+   static final int hash(Object key) {
+       int h;
+       return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+   }
+   ```
+
+   ```java
+   final int hash(Object k) {
+       int h = hashSeed;
+       if (0 != h && k instanceof String) {
+           return sun.misc.Hashing.stringHash32((String) k);
+       }
+   
+       h ^= k.hashCode();
+   
+       // This function ensures that hashCodes that differ only by
+       // constant multiples at each bit position have a bounded
+       // number of collisions (approximately 8 at default load factor).
+       h ^= (h >>> 20) ^ (h >>> 12);
+       return h ^ (h >>> 7) ^ (h >>> 4);
+   }
+   ```
+
+   
+
+### 你能自己设计实现一个 HashMap 吗？
+
+- Node
+- DEFAULT_CAPATITY
+- LOAD_FACTORY
+- size
+- 构造函数
+- put()
+- get()
+- resize()
+- rehash() 重新散列
+- size()
+
+![完整代码](http://42.192.130.83:9000/picgo/imgs/collection-30.png)

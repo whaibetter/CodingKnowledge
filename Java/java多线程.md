@@ -711,10 +711,10 @@ public static void main(String[] args) {
     >   ```
     >   javaCopy codeimport java.util.concurrent.locks.Lock;
     >   import java.util.concurrent.locks.ReentrantLock;
-    >                          
+    >                            
     >   public class InterruptibleLockExample {
     >       private final Lock lock = new ReentrantLock();
-    >                          
+    >                            
     >       public void performTask() throws InterruptedException {
     >           lock.lockInterruptibly(); // 线程可以被中断
     >           try {
@@ -783,6 +783,14 @@ public static void main(String[] args) {
 - CPU控制权从一个**正在运行的线程**切换到另一个**就绪等待CPU执行权线程**
 
   线程是操作系统分配资源的最小单位，每个线程都有自己的栈空间和寄存器，缺少资源无法执行时，先保存到内存，加载另一个就绪的线程。
+  
+  
+  
+  当线程使用完时间片后，就会处于就绪状态并让出 CPU 让其他线程占用，这就是上下文切换。
+  
+  ![上下文切换时机](http://42.192.130.83:9000/picgo/imgs/javathread-9.png)
+  
+  ![线程切换-2020-12-16-2107](http://42.192.130.83:9000/picgo/imgs/javathread-8.png)
 
 ## 引起线程上下文切换的原因
 
@@ -1225,3 +1233,225 @@ Jconsole
 
 ![jconsole_xyA3XxdpEx](http://42.192.130.83:9000/picgo/imgs/jconsole_xyA3XxdpEx.png)
 
+## 什么是进程和线程？如何理解协程？
+
+[进程与线程的区别是什么？ | 二哥的Java进阶之路 (javabetter.cn)](https://javabetter.cn/thread/why-need-thread.html)
+
+- 进程Java
+- 线程 进程中的一个或多个线程，充分发挥多CPU的优势
+
+![三分恶面渣逆袭：进程与线程关系](http://42.192.130.83:9000/picgo/imgs/javathread-3.png)
+
+#### 如何理解协程？
+
+协程通常被视为**比线程更轻量级的并发单元**，它们主要在一些支持异步编程模型的语言中得到了原生支持，如 Kotlin、Go 等。
+
+> ### 模拟协程式的异步执行任务
+>
+> - 两个异步任务，结果合并
+>
+> ```java
+> public static void main(String[] args) throws ExecutionException, InterruptedException {
+>     // 创建一个异步任务，该任务返回一个整数
+>     CompletableFuture<Integer> future = CompletableFuture.supplyAsync(
+>             new Supplier<Integer>() {
+>                 @Override
+>                 public Integer get() {
+>                     System.out.println("A complete");
+>                     return 10;
+>                 }
+>             }
+>     );
+> 
+>     // 创建另一个异步任务，该任务同样返回一个整数
+>     CompletableFuture<Integer> future2 = CompletableFuture.supplyAsync(
+>             () -> {
+>                 System.out.println("B start");
+>                 try {
+>                     Thread.sleep(10000);
+>                 } catch (InterruptedException e) {
+>                     throw new RuntimeException(e);
+>                 }
+>                 System.out.println("B complete");
+>                 return 20;
+>             }
+>     );
+> 
+>     // 两个异步任务完成计算后，将它们的结果相加
+>     CompletableFuture<Object> ans = future.thenCombine(future2, new BiFunction<Integer, Integer, Object>() {
+>                 @Override
+>                 public Object apply(Integer integer, Integer integer2) {
+>                     return integer + integer2;
+>                 }
+>             }
+>     );
+> 
+>     // 打印结果
+>     System.out.println(ans.get());
+> 
+> }
+> ```
+
+## 为什么调用 start()方法时会执行 run()方法，那怎么不直接调用 run()方法？
+
+- **start方法才会创建一个线程**
+- 直接调用run方法其实还是单线程
+
+## 说说线程中断[interrupt 方法](https://www.cnblogs.com/myseries/p/10918819.html)
+
+Java 中的线程中断是一种线程间的协作模式，通过**设置线程的中断标志**并**不能直接终止该线程的执行**。
+
+<b style='color:red'>stop 方法</b>用来强制线程立刻停止（可能会在不一致的状态下释放锁，破坏对象的一致性，导致难以发现的错误和资源泄漏），<b style='color:red'> 很危险</b>
+
+- `void interrupt()` 方法：**中断线程标志**，例如，当线程 A 运行时，线程 B 可以调用线程 `interrupt()` 方法来设置线程的中断标志为 true 并立即返回。设置标志仅仅是设置标志, 线程 B 实际并没有被中断，会继续往下执行。
+- `boolean isInterrupted()` 方法： 检测当前线程是否**被中断**。
+- `boolean interrupted()` 方法： 检测当前线程**是否被中断**，与 isInterrupted 不同的是，该方法如果发现当前线程被中断，则会清除中断标志。
+
+```java
+public void run() {
+    try {
+        while (!Thread.currentThread().isInterrupted()) {
+            // 执行任务
+        }
+    } catch (InterruptedException e) {
+        // 线程被中断时的清理代码
+    } finally {
+        // 线程结束前的清理代码
+    }
+}
+```
+
+## 线程有几种状态？
+
+![Java线程状态变化](http://42.192.130.83:9000/picgo/imgs/javathread-7.png)
+
+| 状态         | 说明                                                         |
+| ------------ | ------------------------------------------------------------ |
+| NEW          | 初始状态：线程被创建，但还没有调用 start()方法               |
+| RUNNABLE     | 运行状态：Java 线程将操作系统中的就绪和运行两种状态笼统的称作“运行” |
+| BLOCKED      | 阻塞状态：表示线程阻塞于锁                                   |
+| WAITING      | 等待状态：表示线程进入等待状态，进入该状态表示当前线程需要等待其他线程做出一些特定动作（通知或中断） |
+| TIME_WAITING | 超时等待状态：该状态不同于 WAITIND，它是可以在指定的时间自行返回的 |
+| TERMINATED   | 终止状态：表示当前线程已经执行完毕                           |
+
+## 守护线程了解吗？
+
+Java 中的线程分为两类，分别为 **daemon 线程（守护线程）**和 **user 线程（用户线程）**。
+
+- 用户线程：main 方法，main 方法所在的线程就是一个用户线程。
+- 守护线程
+  1. 垃圾回收器（Garbage Collector）线程：用于自动回收不再使用的内存资源。
+  2. Finalizer线程：用于执行对象的finalize()方法，进行垃圾回收前的清理工作。
+  3. 系统信号分发线程（Signal Dispatcher）：用于接收操作系统发送的信号并进行处理。
+  4. 队列清理线程（Reference Handler）：负责处理引用对象的清理工作，例如处理引用队列中的对象。
+
+## 线程间有哪些通信方式？
+
+- volatile
+
+- syncronized 
+
+- wait notify
+
+- **管道输入/输出流**
+
+  > 管道输入/输出流和普通的文件输入/输出流或者网络输入/输出流不同，它主要用于线程之间的数据传输，而传输的媒介为内存。
+  >
+  > [管道输入/输出流open in new window](https://javabetter.cn/io/piped.html)主要包括了如下 4 种具体实现：PipedOutputStream、PipedInputStream、 PipedReader 和 PipedWriter，前两种面向字节，而后两种面向字符。
+
+- **使用 ThreadLocal**
+
+- Semaphore
+
+- **Thread.join()** 等待这个线程终止后
+
+  ```java
+  public static void main(String[] args) {
+  
+      Thread thread = new Thread(() -> {
+          try {
+              System.out.println("A Start");
+              Thread.sleep(10000);
+              System.out.println("A DONE");
+          } catch (InterruptedException e) {
+              throw new RuntimeException(e);
+          }
+  
+      });
+      thread.start();
+  
+      new Thread(() -> {
+          try {
+              thread.join(); // 等待A线程执行完成
+              System.out.println("B DONE");
+          } catch (InterruptedException e) {
+              throw new RuntimeException(e);
+          }
+      }).start();
+  }
+  ```
+
+## ThreadLocal 怎么实现的呢？
+
+ThreadLocal 本身并不存储任何值，它只是作为一个映射，来映射线程的局部变量。当一个线程**调用 ThreadLocal 的 set 或 get 方法时，实际上是访问线程自己的 ThreadLocal.ThreadLocalMap**。
+
+- key ThreadLocal
+- value 值
+
+**每个线程有直接的ThreadLocal.ThreadLocalMap**
+
+ThreadLocal 的实现原理就是
+
+- **每个线程维护一个 Map**
+
+  - key 为 ThreadLocal 对象
+  - value 为想要实现线程隔离的对象。
+
+- set(ThreadLocal,Object) 获得**ThreadLocal的hash**，放入对应的Map（**其实是个数组**）
+
+  使用线性探测法，即在发生冲突时，会顺序地检查下一个位置
+
+- get() 获取本ThreadLocal的Object，获取ThreadLocal的hash，获取对应的Entry
+
+```java
+// 创建一个线程局部变量threadLocal1，并设置其初始值为10
+    private static ThreadLocal<Integer> threadLocal1 = ThreadLocal.withInitial(() -> 10);
+    // 创建一个线程局部变量threadLocal2，并设置其初始值为"Hello"
+    private static ThreadLocal<String> threadLocal2 = ThreadLocal.withInitial(() -> "Hello");
+
+    public static void main(String[] args) {
+        // 创建一个新线程thread，并为其指定一个Runnable实现
+        Thread thread = new Thread(() -> {
+            // 获取threadLocal1的值
+            int value1 = threadLocal1.get();  // 放入Thread的Map key 为ThreadLocal<integer> value为10
+            // 获取threadLocal2的值
+            String value2 = threadLocal2.get(); // 放入Thread的Map key 为ThreadLocal<String> value为Hello
+            // 打印threadLocal1的值
+            System.out.println("ThreadLocal1: " + value1);
+            // 打印threadLocal2的值
+            System.out.println("ThreadLocal2: " + value2);
+        });
+    
+        // 启动线程thread
+        thread.start();
+    }
+}
+```
+
+![三分恶面渣逆袭：ThreadLoca结构图](http://42.192.130.83:9000/picgo/imgs/javathread-13.png)
+
+> **Entry 继承了 WeakReference**，它限定了 key 是一个弱引用，弱引用的好处是**当内存不足时，JVM 会回收 ThreadLocal 对象**，并且将其对应的 Entry 的 value 设置为 null，这样在很大程度上可以避免内存泄漏。
+>
+> ```java
+> static class Entry extends WeakReference<ThreadLocal<?>> {
+>     /** The value associated with this ThreadLocal. */
+>     Object value;
+> 
+>     Entry(ThreadLocal<?> k, Object v) {
+>         super(k);
+>         value = v;
+>     }
+> }
+> ```
+
+![img](http://42.192.130.83:9000/picgo/imgs/javathread-20240407205747.png)

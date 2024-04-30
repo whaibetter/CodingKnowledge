@@ -1287,3 +1287,152 @@ BigDecimal y = b.subtract(c);
 System.out.println(x.compareTo(y));// 0
 ```
 
+## Java 语言有哪些特点？
+
+- 面向对象（封装，继承，多态）；
+
+- **平台无关性**，平台无关性的具体表现在于，Java 是“一次编写，到处运行（Write Once，Run any Where）”的语言，因此采用 Java 语言编写的程序具有很好的可移植性，而保证这一点的正是 Java 的虚拟机机制。在引入虚拟机之后，Java 语言在不同的平台上运行不需要重新编译。
+
+- 支持多线程。C++ 语言没有内置的多线程机制，因此必须调用操作系统的多线程功能来进行多线程程序设计，而 Java 语言却提供了多线程支持；
+
+- 编译与解释并存；
+
+  > ![在这里插入图片描述](http://42.192.130.83:9000/picgo/imgs/20200315155134267.png)
+  >
+  > `.java ----编译---> .class ----JVM解释器(JIT编译+解释)--->操作系统执行`
+  >
+  > 现在的JVM为了效率，都有一些JIT优化。它又会把.class的[二进制](https://so.csdn.net/so/search?q=二进制&spm=1001.2101.3001.7020)代码编译为本地的代码直接运行，所以，又是编译的。
+  >
+  > ![在这里插入图片描述](http://42.192.130.83:9000/picgo/imgs/20200315155206262.png)
+  >
+  > ![Java程序执行过程](http://42.192.130.83:9000/picgo/imgs/javase-4.png)
+
+## 什么说 Java 语言“编译与解释并存”？
+
+- 编译型语言是指编译器针对特定的操作系统将源代码**一次性翻译**成可被该平台执行的机器码；
+- 解释型语言是指解释器对源程序**逐行解释**成特定平台的机器码并立即执行。
+
+Java 语言既具有编译型语言的特征，也具有解释型语言的特征.
+
+1. 编译：java编译为class（先经过编译步骤，生成字节码（`.class` 文件））；JIT编译器
+2. 解释：解释
+
+![编译与解释](http://42.192.130.83:9000/picgo/imgs/javase-5.png)
+
+## 读以下代码
+
+```java
+public class TryDemo {
+    public static void main(String[] args) {
+        System.out.println(test1());
+    }
+    public static int test1() {
+        int i = 0;
+        try {
+            i = 2;
+            return i;
+        } finally {
+            i = 3;
+        }
+    }
+}
+```
+
+执行结果：2。
+
+大家可能会以为结果应该是 3，因为在 return 前会执行 finally，而 i 在 finally 中被修改为 3 了，那最终返回 i 不是应该为 3 吗？
+
+但其实，**在执行 finally 之前，JVM 会先将 i 的结果暂存起来，然后 finally 执行完毕后，会返回之前暂存的结果**，而不是返回 i，所以即使 i 已经被修改为 3，最终返回的还是之前暂存起来的结果 2。
+
+## BIO、NIO、AIO 之间的区别？
+
+![三分恶面渣逆袭：BIO](http://42.192.130.83:9000/picgo/imgs/javase-27.png)
+
+![三分恶面渣逆袭：NIO完整示意图](http://42.192.130.83:9000/picgo/imgs/javase-29.png)
+
+#### AIO
+
+引入了异步通道的概念，使得 I/O 操作可以异步进行。
+
+```java
+AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(Paths.get("test.txt"), StandardOpenOption.READ);
+ByteBuffer buffer = ByteBuffer.allocate(1024);
+Future<Integer> result = fileChannel.read(buffer, 0);
+while (!result.isDone()) {
+    // do something
+}
+```
+
+## Serializable 接口有什么用？serialVersionUID 又有什么用？
+
+这个接口只是一个标记，没有具体的作用，但是如果不实现这个接口，在有些序列化场景会报错，所以一般建议，创建的 JavaBean 类都实现 Serializable。
+
+serialVersionUID 就是起验证作用。
+
+```java
+private static final long serialVersionUID = 1L;
+```
+
+我们经常会看到这样的代码，这个 ID 其实就是用来验证序列化的对象和反序列化对应的对象 ID 是否一致。
+
+这个 ID 的数字其实不重要，无论是 1L 还是 IDE 自动生成的，只要序列化时候对象的 serialVersionUID 和反序列化时候对象的 serialVersionUID 一致的话就行。
+
+> 所以如果你没有定义一个 serialVersionUID， 结果序列化一个对象之后，在反序列化之前把对象的类的结构改了，比如增加了一个成员变量，则此时的反序列化会失败。
+>
+> 因为类的结构变了，所以 serialVersionUID 就不一致。
+
+## 说说有几种序列化方式？
+
+- Java 对象序列化
+- Json 序列化：这个可能是我们最常用的序列化方式，Json 序列化的选择很多，一般会使用 jackson 包，通过 ObjectMapper 类来进行一些操作，比如将对象转化为 byte 数组或者将 json 串转化为对象。
+- ProtoBuff 序列化：ProtocolBuffer 是一种轻便高效的结构化数据存储格式，ProtoBuff 序列化对象可以很大程度上将其压缩，可以大大减少数据传输大小，提高系统性能。
+
+## [#](https://javabetter.cn/sidebar/sanfene/javase.html#jdk1-8-新特性)JDK1.8 新特性
+
+- **接口支持default方法** Java 8 允许我们给接口添加一个非抽象的方法实现，只需要使用 default 关键字修饰即可
+
+- **Lambda 表达式和函数式接口**：Lambda 表达式本质上是一段匿名内部类，也可以是一段可以传递的代码。Lambda 允许把函数作为一个方法的参数（函数作为参数传递到方法中），使用 Lambda 表达式使代码更加简洁，但是也不要滥用，否则会有可读性等问题，《Effective Java》作者 Josh Bloch 建议使用 Lambda 表达式最好不要超过 3 行。
+
+- **Stream API**：用函数式编程方式在集合类上进行复杂操作的工具，配合 Lambda 表达式可以方便的对集合进行处理。
+
+- 日期时间 API
+
+- **Optional 类**：用来解决空指针异常的问题。Optional 作为解决空指针异常的一种方式，不赞成代码被 null 检查的代码污染
+
+  ```java
+  Optional<String> optional = Optional.of("bam");
+  
+  optional.isPresent();           // true
+  optional.get();                 // "bam"
+  optional.orElse("fallback");    // "bam"
+  
+  optional.ifPresent((s) -> System.out.println(s.charAt(0)));     // "b"
+  ```
+
+  
+
+## Lambda 表达式了解多少？
+
+Lambda 表达式本质上是一段匿名内部类，也可以是一段可以传递的代码。
+
+只有那些函数式接口（Functional Interface）才能缩写成 Lambda 表示式。
+
+JDK 1.8 API 包含了很多内置的函数式接口。其中就包括我们在老版本中经常见到的 **Comparator** 和 **Runnable**，Java 8 为他们都添加了 `@FunctionalInterface`注解，以用来支持 Lambda 表达式。
+
+还有 Callable、Predicate、Function、Supplier、Consumer 等等
+
+## Stream 流用过吗？
+
+`Stream` 流，简单来说，使用 `java.util.Stream` 对一个包含一个或多个元素的集合做各种操作。这些操作可能是 *中间操作* 亦或是 *终端操作*。 终端操作会返回一个结果，而中间操作会返回一个 `Stream` 流。
+
+```java
+stringCollection
+    .stream() // java.util.stream.Stream
+    // .filter((s) -> s.startsWith("a"))
+    // .sorted()
+    // .map(String::toUpperCase)
+    // .anyMatch((s) -> s.startsWith("a"));
+    // .count();
+```
+
+![Java Stream流](http://42.192.130.83:9000/picgo/imgs/javase-38.png)
