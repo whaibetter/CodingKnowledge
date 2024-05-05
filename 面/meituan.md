@@ -367,3 +367,42 @@ public boolean equals(Object o)
 
 
 
+
+
+// TODO
+
+> 
+> 一面：（65min）
+> 1、HashMap 原理、为什么线程不安全、红黑树的结构
+> 2、ConcurrentHashMap 怎么保证线程安全、1.8 版本做了什么优化、为什么把 ReentrantLock 改成了 CAS + synchronized
+> 3、hashcode 和 equals，只重写一个会有什么问题
+> 4、最左匹配原则，联合索引 (a, b, c)，查询条件：①a= 1 and c = 2 and b = 3、②a = 1 and b &gt; 2 and c = 3、还有一个忘了
+> 5、为什么用 B+ 树作为索引
+> 6、事务隔离级别、可重复读解决了什么问题
+> 7、MySQL 实现的可重复读怎么解决脏读和不可重复读问题
+> 8、JVM 内存结构
+> 9、Redis 常用数据类型
+> 10、Redis 实现分布式锁
+> 11、缓存穿透、缓存雪崩
+> 12、缓存空值和布隆过滤器的区别、优缺点
+> 13、用过什么 mq、RocketMQ 的结构
+> 14、怎么保证不重复消费、消费失败了怎么办
+> 15、简单聊项目
+> 16、做题、LC143 重排链表
+>
+> 二面：（60min）
+> 1、拷打项目半小时
+> 2、IoC
+> 3、BeanFactory 和 FactoryBean 的区别
+> 4、举例 AOP 适用场景、AOP 失效原因
+> 5、synchronized 和 ReentrantLock 区别、AQS 原理
+> 6、七个设计原则（面试前一小时才看过一遍，结果还是忘了一个![img](https://uploadfiles.nowcoder.com/images/20220815/318889480_1660553763930/8B36D115CE5468E380708713273FEF43)）
+> 7、做题，LC82 删除排序链表中的重复元素II（一开始被题目描述的“进阶：空间 O(n)，时间 O(n)”误导了，以为要用 HashMap，面试官提醒才反应过来其实一次遍历就行![img](https://uploadfiles.nowcoder.com/images/20220815/318889480_1660553875000/EC354B0EC861D82E051FCCDF41808E4E)）
+> 8、怎么快速上手新项目
+> 9、怎么学习 Redis 的
+> 10、反问
+>
+>
+> 作者：Chancelor
+> 链接：[https://www.nowcoder.com/interview/center?entranceType=%E5%AF%BC%E8%88%AA%E6%A0%8F](https://www.nowcoder.com/interview/center?entranceType=导航栏)
+> 来源：牛客网
