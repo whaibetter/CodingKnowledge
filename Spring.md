@@ -953,7 +953,7 @@ com.whai.custom.MyServiceAutoConfiguration
   >   public class MyCustomEvent extends ApplicationEvent {
   >       // ...
   >   }
-  >           
+  >             
   >   // 监听器
   >   @Component
   >   public class MyCustomEventListener implements ApplicationListener<MyCustomEvent> {
@@ -962,13 +962,13 @@ com.whai.custom.MyServiceAutoConfiguration
   >           // 处理事件
   >       }
   >   }
-  >           
+  >             
   >   // 发布事件
   >   @Service
   >   public class MyEventPublisher {
   >       @Autowired
   >       private ApplicationEventPublisher eventPublisher;
-  >           
+  >             
   >       public void publishEvent() {
   >           // 发布事件
   >           eventPublisher.publishEvent(new MyCustomEvent(this));
@@ -1464,3 +1464,57 @@ String json = mapper.writeValueAsString(user);
 
 - 将那些与业务无关，却为业务模块所共同调用的逻辑或责任（例如事务处理、日志管理、权限控制等）封装起来。
 
+## 注入Bean的方式有哪些？
+
+> 1. `@Autowired`
+>    - 字段
+>    - 构造函数
+>    - set
+> 2. `@Resource`
+> 3. `@Inject`
+> 4. XML
+
+1. 构造函数注入：
+
+   ```java
+   public class MyBean {
+       private Dependency dependency;
+   	@Autowired
+       public MyBean(Dependency dependency) {
+           this.dependency = dependency;
+       }
+   }
+   ```
+
+2. Setter 方法注入：
+
+   ```java
+   public class MyBean {
+       private Dependency dependency;
+   	@Autowired
+       public void setDependency(Dependency dependency) {
+           this.dependency = dependency;
+       }
+   }
+   ```
+
+3. 字段注入
+
+   ```java
+   public class MyBean {
+       @Autowired
+       private Dependency dependency;
+   }
+   ```
+
+4. XML 配置文件注入：
+
+   ```xml
+   <bean id="myBean" class="com.example.MyBean">
+       <property name="dependency" ref="dependencyBean" />
+   </bean>
+   
+   <bean id="dependencyBean" class="com.example.Dependency" />
+   ```
+
+   
