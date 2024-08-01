@@ -473,9 +473,11 @@ private SmsService smsService;
 Spring本身只能解决单实例存在的循环引用问题，但是存在以下四种情况需要人为干预：
 
 - 多实例的Setter注入导致的循环依赖，需要把Bean改成单例。
-- constructor注入导致的循环依赖，可以通过@Lazy注解
+- constructor注入导致的循环依赖，可以通过@Lazy注解。
+  原型Bean每次请求都会创建一个新的实例，因此在创建过程中无法利用已有的实例来解决循环依赖。
 - DependsOn导致的循环依赖，找到注解循环依赖的地方，迫使它不循环依赖。
 - 单例的代理对象Setter注入导致的循环依赖，可以使用@Lazy注解，或者使用@DependsOn注解指定加载先后关系。
+
 
 ### Spring中BeanFactory和FactoryBean的区别?
 
