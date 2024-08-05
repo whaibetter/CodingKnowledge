@@ -711,10 +711,10 @@ public static void main(String[] args) {
     >   ```
     >   javaCopy codeimport java.util.concurrent.locks.Lock;
     >   import java.util.concurrent.locks.ReentrantLock;
-    >                            
+    >                                
     >   public class InterruptibleLockExample {
     >       private final Lock lock = new ReentrantLock();
-    >                            
+    >                                
     >       public void performTask() throws InterruptedException {
     >           lock.lockInterruptibly(); // 线程可以被中断
     >           try {
@@ -1455,3 +1455,133 @@ ThreadLocal 的实现原理就是
 > ```
 
 ![img](http://42.192.130.83:9000/picgo/imgs/javathread-20240407205747.png)
+
+### 说说你对 JUC 下并发工具类的了解?
+
+Java 并发工具类（JUC，Java Util Concurrency）是 Java 标准库中用于支持多线程编程的一组工具类。这些工具类位于 java.util.concurrent 包下，提供了高级别的并发抽象，使得开发人员能够更容易地编写线程安全的程序。
+JUC 下常用的并发工具类
+以下是一些常用的并发工具类及其用途：
+- AtomicInteger
+  定义：AtomicInteger 是一个原子整数类，它提供了一组原子操作，如加减法、比较和交换等。
+- CountDownLatch
+  定义：CountDownLatch 是一种协调工具类，用于让一组线程等待其他线程完成工作。
+  用途：通常用于等待一组操作完成，例如在启动服务时等待所有环境初始化完毕。
+- CyclicBarrier
+  定义：CyclicBarrier 类似于 CountDownLatch，但它允许线程在某个屏障点等待其他线程。
+  用途：用于多线程协作场景，例如多线程并行计算后需要同步结果。
+  - 和CountDownLatch 类似，CyclicBarrier 允许一组线程等待其他线程完成工作(所有线程都await时，才会被释放，而CountDownLatch是设置num，当num减到0的时候才唤醒await)。
+  - CyclicBarrier 允许重用，而 CountDownLatch 不能。
+```java
+import java.util.concurrent.CountDownLatch;
+public class CountDownLatchExample {
+    public static void main(String[] args) throws InterruptedException {
+        int threadCount = 5;
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            new Thread(() -> {
+                System.out.println(Thread.currentThread().getName() + " 开始工作");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.out.println(Thread.currentThread().getName() + " 工作完成");
+                latch.countDown();
+            }).start();
+        }
+
+        // 等待所有子线程完成
+        latch.await();
+        System.out.println("所有子线程已完成！");
+    }
+}
+import java.util.concurrent.CyclicBarrier;
+
+public class CyclicBarrierExample {
+    public static void main(String[] args) {
+        int threadCount = 5;
+        CyclicBarrier barrier = new CyclicBarrier(threadCount, () -> {
+            System.out.println("所有线程已完成！");
+        });
+
+        for (int i = 0; i < threadCount; i++) {
+            new Thread(() -> {
+                System.out.println(Thread.currentThread().getName() + " 开始工作");
+                try {
+                    Thread.sleep(1000); // 模拟耗时操作
+                    barrier.await(); // 等待所有线程到达屏障点
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                System.out.println(Thread.currentThread().getName() + " 工作完成");
+            }).start();
+        }
+    }
+}
+
+
+
+```
+- Semaphore
+  定义：Semaphore 是一种信号量，用于控制对有限资源的访问。
+  用途：通常用于限制同时访问某个资源的线程数量，例如限制并发的网络请求。
+- Exchanger
+  定义：Exchanger 是一种协调工具类，用于在线程间交换数据。
+  用途：两个线程可以在 Exchanger 上交换数据，常用于数据交换场景。
+  - 当调用exchange时，会阻塞，等待另一个线程调用exchange，所以必须两边都发送才是exchange
+  - 如果只要当方面发送，可以考虑 BlockingQueue 或者 SynchronousQueue。
+    - BlockingQueue：适用于生产者-消费者模型，可以实现数据的单向传输。
+    - SynchronousQueue：类似于 Exchanger，但是它不需要两个线程都提供数据就可以进行交换。一个线程可以只提供数据（放入队列），另一个线程可以只从队列中取数据。
+      示例
+- SynchronousQueue
+
+```java
+    /**
+     * 创建一个线程池，该线程池会根据需要创建新线程，
+     * 但在以前构造的线程可用时将重用这些线程。这
+     * 些池通常会提高执行许多短期异步任务的程序的性能。
+     * 对 的 execute 调用将重用以前构造的线程（如果可用）。
+     * 如果没有可用的现有线程，将创建一个新线程并将其添加到池中。
+     * 60 秒内未使用的线程将被终止并从缓存中删除。
+     * 因此，保持空闲足够长时间的池不会消耗任何资源。
+     * 请注意，可以使用构造函数创建 ThreadPoolExecutor 具有相似属性但详细信息不同
+     * （例如，超时参数）的池。
+     * 返回：新创建的线程池
+     * Creates a thread pool that creates new threads as needed, but
+     * will reuse previously constructed threads when they are
+     * available.  These pools will typically improve the performance
+     * of programs that execute many short-lived asynchronous tasks.
+     * Calls to {@code execute} will reuse previously constructed
+     * threads if available. If no existing thread is available, a new
+     * thread will be created and added to the pool. Threads that have
+     * not been used for sixty seconds are terminated and removed from
+     * the cache. Thus, a pool that remains idle for long enough will
+     * not consume any resources. Note that pools with similar
+     * properties but different details (for example, timeout parameters)
+     * may be created using {@link ThreadPoolExecutor} constructors.
+     *
+     * @return the newly created thread pool
+     */
+    public static ExecutorService newCachedThreadPool() {
+        return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+                                      60L, TimeUnit.SECONDS,
+                                      new SynchronousQueue<Runnable>());
+    }
+    /**
+     * 核心线程数 0
+     * 最大线程数 Integer.MAX_VALUE
+     * 线程存活时间 60秒
+     * 队列 SynchronousQueue 
+     *          一个 阻塞队列 ，其中每个插入操作都必须等待另一个线程执行相应的删除操作，反之亦然。同步队列没有任何内部容量，甚至没有 1 的容量。
+     *          被设计为一种轻量级的线程间通信机制，而不是一个真正的队列。
+     *          它的主要目的是为了实现线程之间的直接传递，而不是作为一个持久的存储区域。
+     *          无缓冲特性:
+     *              SynchronousQueue 的容量为0，意味着它没有任何内部缓冲区来存储元素。
+     *          当一个线程尝试通过 put 方法将一个元素放入 SynchronousQueue 时，它实际上是在等待另一个线程通过 take 方法来消费这个元素。
+     * 
+     * /
+```
+
+
+

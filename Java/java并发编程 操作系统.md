@@ -88,3 +88,6 @@ public static void main(String[] args) {
 - 本地方法栈：**Native 方法服务**
 
 区别是：**虚拟机栈为虚拟机执行 Java 方法 （也就是字节码）服务，而本地方法栈则为虚拟机使用到的 Native 方法服务。** 在 HotSpot 虚拟机中和 Java 虚拟机栈合二为一。
+
+
+
